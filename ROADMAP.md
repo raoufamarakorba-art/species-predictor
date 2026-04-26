@@ -12,7 +12,7 @@
 - Export observations as CSV and GeoJSON.
 - Add a map view for occurrence points.
 - Add backend caching for iNaturalist requests.
-- Add dataset quality summaries: coordinates, years, places, duplicates, and spatial bias indicators.
+- Add dataset quality summaries: coordinates, years, places, duplicates, and basic recommendations.
 
 ## v0.3.0 - Cleaning
 

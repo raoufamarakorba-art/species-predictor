@@ -1,11 +1,13 @@
 import { useState, useCallback } from 'react'
 import { fetchObservations, computeStats } from '../services/inaturalist.js'
 import { fetchPrediction } from '../services/api.js'
+import { fetchDatasetSummary } from '../services/datasets.js'
 
 const initialState = {
   observations: [],
   taxon: null,
   stats: null,
+  datasetSummary: null,
   prediction: null,
   loading: false,
   loadingPredict: false,
@@ -38,12 +40,20 @@ export function useSpeciesData() {
       // Best-matching taxon (first observation)
       const taxon = observations[0]?.taxon || null
       const stats = computeStats(observations)
+      let datasetSummary = null
+
+      try {
+        datasetSummary = await fetchDatasetSummary(observations)
+      } catch {
+        datasetSummary = null
+      }
 
       setState(s => ({
         ...s,
         observations,
         taxon,
         stats,
+        datasetSummary,
         loading: false,
       }))
 

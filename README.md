@@ -15,6 +15,9 @@ Extraction de données de présence d'espèces depuis **iNaturalist**, analyse s
 | **Phénologie** | Courbe saisonnière mensuelle des observations |
 | **Tendance annuelle** | Graphique interactif de progression/déclin |
 | **Répartition géo** | Top localités par nombre d'observations |
+| **Carte occurrences** | Visualisation des points géoréférencés |
+| **Exports données** | Export CSV complet et GeoJSON géographique |
+| **Qualité dataset** | Couverture coordonnées, doublons probables, recommandations |
 | **Prédictions IA** | Probabilité de présence × biotope via Ollama |
 | **Conservation** | Analyse de tendance + recommandations |
 
@@ -140,6 +143,7 @@ Le serveur joue le rôle de proxy pour deux raisons :
 | `npm run dev` | Lance client + serveur en parallèle |
 | `npm run dev:client` | Frontend seul (port 5173) |
 | `npm run dev:server` | Backend seul (port 8000) |
+| `npm run test:server` | Tests backend FastAPI |
 | `npm run build` | Build production du frontend |
 | `npm start` | Lance le serveur (production) |
 | `npm run install:all` | Installe les dépendances Node et Python |
@@ -164,7 +168,7 @@ async def occurrences():
 Le dossier `server/app/models/` peut accueillir des modèles ML plus sophistiqués (MaxEnt, BRT, Random Forest via Python/R).
 
 ### Carte interactive
-Intégrer `leaflet` + `react-leaflet` dans le client pour visualiser les coordonnées GPS des observations.
+La carte Leaflet est intégrée. Les prochaines améliorations utiles sont le clustering, le filtrage par année et l'export de l'emprise géographique.
 
 ---
 

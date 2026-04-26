@@ -1,26 +1,57 @@
 from __future__ import annotations
 
+from time import monotonic
 from typing import Any
 
 import httpx
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
+from app.config import settings
+
 
 router = APIRouter(prefix="/api/inaturalist", tags=["inaturalist"])
 INAT_BASE = "https://api.inaturalist.org/v1"
+_cache: dict[tuple[str, tuple[tuple[str, str], ...]], tuple[float, Any]] = {}
+
+
+def make_cache_key(path: str, params: dict[str, Any] | None = None) -> tuple[str, tuple[tuple[str, str], ...]]:
+    normalized = tuple(sorted((str(key), str(value)) for key, value in (params or {}).items()))
+    return path, normalized
 
 
 async def fetch_inaturalist(path: str, params: dict[str, Any] | None = None) -> Any:
+    cache_key = make_cache_key(path, params)
+    now = monotonic()
+    ttl = settings.inaturalist_cache_ttl_seconds
+
+    if ttl > 0 and cache_key in _cache:
+        cached_at, cached_payload = _cache[cache_key]
+        if now - cached_at < ttl:
+            return cached_payload
+
     try:
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             response = await client.get(f"{INAT_BASE}{path}", params=params)
             response.raise_for_status()
-            return response.json()
+            payload = response.json()
     except httpx.HTTPStatusError as exc:
         raise RuntimeError(f"iNaturalist API: {exc.response.status_code}") from exc
     except httpx.HTTPError as exc:
         raise RuntimeError(str(exc) or "iNaturalist API inaccessible") from exc
+
+    if ttl > 0:
+        _cache[cache_key] = (now, payload)
+
+    return payload
+
+
+@router.get("/cache/status")
+async def cache_status():
+    return {
+        "entries": len(_cache),
+        "ttlSeconds": settings.inaturalist_cache_ttl_seconds,
+    }
 
 
 @router.get("/observations")

@@ -10,11 +10,12 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
+from app.routers.datasets import router as datasets_router
 from app.routers.inaturalist import router as inaturalist_router
 from app.routers.predict import router as predict_router
 
 
-app = FastAPI(title="Species Predictor API", version="1.0.0")
+app = FastAPI(title="Species Predictor API", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -49,6 +50,7 @@ async def rate_limit_predict(
 
 app.include_router(predict_router)
 app.include_router(inaturalist_router)
+app.include_router(datasets_router)
 
 
 @app.get("/api/health")

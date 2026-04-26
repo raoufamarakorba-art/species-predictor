@@ -1,0 +1,56 @@
+.wrapper {
+  margin: 1.5rem 0;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.count {
+  color: var(--color-text-faint);
+  font-size: 12px;
+}
+
+.mapShell {
+  height: 360px;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.popupTitle {
+  color: #1a1a18;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.popupMeta {
+  color: #6b6b66;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 640px) {
+  .mapShell {
+    height: 300px;
+  }
+}

@@ -1,23 +1,27 @@
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import SearchBar from './components/SearchBar.jsx'
 import SpeciesInfo from './components/SpeciesInfo.jsx'
 import MetricsGrid from './components/MetricsGrid.jsx'
 import Charts from './components/Charts.jsx'
+import DataExports from './components/DataExports.jsx'
+import DatasetQuality from './components/DatasetQuality.jsx'
 import Predictions from './components/Predictions.jsx'
 import ObservationsList from './components/ObservationsList.jsx'
 import OllamaStatus from './components/OllamaStatus.jsx'
 import { useSpeciesData } from './hooks/useSpeciesData.js'
 import styles from './App.module.css'
 
+const OccurrenceMap = lazy(() => import('./components/OccurrenceMap.jsx'))
+
 const TABS = [
-  { id: 'data',    label: 'Données & graphiques' },
+  { id: 'data',    label: 'Données & carte' },
   { id: 'predict', label: 'Prédictions IA' },
   { id: 'obs',     label: 'Observations' },
 ]
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('data')
-  const { observations, taxon, stats, prediction, loading, loadingPredict,
+  const { observations, taxon, stats, datasetSummary, prediction, loading, loadingPredict,
           error, errorPredict, search } = useSpeciesData()
 
   const hasData = observations.length > 0
@@ -71,7 +75,12 @@ export default function App() {
 
             {activeTab === 'data' && (
               <>
+                <DataExports observations={observations} speciesName={lastSearch} />
                 <MetricsGrid stats={stats} />
+                <DatasetQuality summary={datasetSummary} />
+                <Suspense fallback={<div className={styles.loadingBanner}>Chargement de la carte…</div>}>
+                  <OccurrenceMap observations={observations} />
+                </Suspense>
                 <Charts stats={stats} />
               </>
             )}

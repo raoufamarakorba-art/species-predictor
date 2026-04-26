@@ -71,3 +71,50 @@ def test_inaturalist_autocomplete_uses_proxy_layer(monkeypatch):
     payload = response.json()
     assert payload["total_results"] == 1
     assert payload["results"][0]["name"] == "Lynx lynx"
+
+
+def test_dataset_summary_reports_quality_metrics():
+    observations = [
+        {
+            "observed_on": "2024-04-10",
+            "place_guess": "Atlas, Algeria",
+            "quality_grade": "research",
+            "geojson": {"coordinates": [4.5, 36.2]},
+            "taxon": {"id": 42170},
+        },
+        {
+            "observed_on": "2024-04-10",
+            "place_guess": "Atlas, Algeria",
+            "quality_grade": "research",
+            "geojson": {"coordinates": [4.50001, 36.20001]},
+            "taxon": {"id": 42170},
+        },
+        {
+            "observed_on": "2025-05-12",
+            "place_guess": "Kabylie, Algeria",
+            "quality_grade": "needs_id",
+        },
+    ]
+
+    response = client.post("/api/datasets/summary", json={"observations": observations})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total"] == 3
+    assert payload["withCoordinates"] == 2
+    assert payload["withoutCoordinates"] == 1
+    assert payload["coordinateCoverage"] == 66.7
+    assert payload["yearRange"] == {"start": "2024", "end": "2025", "count": 2}
+    assert payload["uniquePlaces"] == 2
+    assert payload["likelyDuplicates"] == 1
+    assert payload["qualityGrades"] == {"research": 2, "needs_id": 1}
+    assert payload["bbox"] == {"west": 4.5, "south": 36.2, "east": 4.50001, "north": 36.20001}
+
+
+def test_inaturalist_cache_status_endpoint():
+    response = client.get("/api/inaturalist/cache/status")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "entries" in payload
+    assert payload["ttlSeconds"] >= 0

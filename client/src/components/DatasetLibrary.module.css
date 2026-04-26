@@ -1,0 +1,298 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header h2 {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.header p {
+  margin-top: 4px;
+  color: var(--color-text-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.metric {
+  min-height: 72px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.metric span {
+  display: block;
+  color: var(--color-text-faint);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-text);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.importPanel,
+.section {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.importPanel {
+  padding: 14px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.formGrid label,
+.notesField {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.formGrid span,
+.notesField span {
+  color: var(--color-text-faint);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.formGrid input,
+.formGrid select,
+.notesField input {
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 9px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.notesField {
+  margin-top: 12px;
+}
+
+.formFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.primaryBtn,
+.secondaryBtn {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.primaryBtn {
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.secondaryBtn {
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.primaryBtn:disabled,
+.secondaryBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(220px, 0.75fr);
+  gap: 14px;
+}
+
+.section {
+  overflow: hidden;
+}
+
+.section h3 {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sourceList {
+  display: flex;
+  flex-direction: column;
+}
+
+.sourceItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sourceItem:last-child {
+  border-bottom: 0;
+}
+
+.sourceItem strong,
+.sourceItem span {
+  display: block;
+}
+
+.sourceItem strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sourceItem span,
+.sourceItem a {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.typeList {
+  display: flex;
+  flex-direction: column;
+}
+
+.typeList div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 13px;
+}
+
+.typeList div:last-child {
+  border-bottom: 0;
+}
+
+.typeList span {
+  color: var(--color-text-muted);
+}
+
+.occurrenceTableWrap {
+  overflow-x: auto;
+}
+
+.occurrenceTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.occurrenceTable th,
+.occurrenceTable td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.occurrenceTable th {
+  color: var(--color-text-faint);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.occurrenceTable td {
+  color: var(--color-text-muted);
+}
+
+.occurrenceTable tr:last-child td {
+  border-bottom: 0;
+}
+
+.empty,
+.error,
+.status {
+  font-size: 13px;
+}
+
+.empty {
+  padding: 16px 14px;
+  color: var(--color-text-faint);
+}
+
+.error {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.status {
+  color: var(--color-text-muted);
+}
+
+.saved {
+  color: var(--color-accent);
+}
+
+.failed {
+  color: var(--color-danger);
+}
+
+@media (max-width: 760px) {
+  .header,
+  .formFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .metrics,
+  .formGrid,
+  .columns {
+    grid-template-columns: 1fr;
+  }
+
+  .primaryBtn,
+  .secondaryBtn {
+    width: 100%;
+  }
+}

@@ -8,6 +8,7 @@ import DatasetQuality from './components/DatasetQuality.jsx'
 import ChatGPTAnalysis from './components/ChatGPTAnalysis.jsx'
 import ReportImportMode from './components/ReportImportMode.jsx'
 import ObservationsList from './components/ObservationsList.jsx'
+import DatasetLibrary from './components/DatasetLibrary.jsx'
 import { useSpeciesData } from './hooks/useSpeciesData.js'
 import styles from './App.module.css'
 
@@ -21,6 +22,7 @@ const TABS = [
 
 const MODES = [
   { id: 'search', label: 'Recherche iNaturalist' },
+  { id: 'library', label: 'Base locale' },
   { id: 'report', label: 'Rapport Markdown' },
 ]
 
@@ -61,6 +63,8 @@ export default function App() {
 
         {mode === 'report' ? (
           <ReportImportMode />
+        ) : mode === 'library' ? (
+          <DatasetLibrary />
         ) : (
           <>
             <SearchBar onSearch={search} loading={loading} />
@@ -94,7 +98,7 @@ export default function App() {
 
                 {activeTab === 'data' && (
                   <>
-                    <DataExports observations={observations} speciesName={lastSearch} />
+                    <DataExports observations={observations} speciesName={lastSearch} taxon={taxon} place={place} />
                     <MetricsGrid stats={stats} />
                     <DatasetQuality summary={datasetSummary} />
                     <Suspense fallback={<div className={styles.loadingBanner}>Chargement de la carte…</div>}>

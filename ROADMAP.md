@@ -24,8 +24,10 @@
 
 ## v0.4.0 - Cleaning
 
+- Add a local SQLite occurrence store with source provenance.
+- Import standardized field/literature/GBIF/iNaturalist CSV or JSON files.
 - Add GBIF as a second occurrence source.
-- Merge and deduplicate iNaturalist and GBIF records.
+- Merge and deduplicate iNaturalist and GBIF records through canonical occurrence keys.
 - Flag suspect coordinates.
 - Add simple spatial thinning with a configurable grid size.
 

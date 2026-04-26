@@ -191,6 +191,83 @@ def test_dataset_summary_reports_quality_metrics():
     assert payload["bbox"] == {"west": 4.5, "south": 36.2, "east": 4.50001, "north": 36.20001}
 
 
+def test_dataset_import_persists_records_and_updates_duplicates():
+    payload = {
+        "source": {"name": "iNaturalist", "type": "inaturalist"},
+        "observations": [
+            {
+                "id": 1001,
+                "observed_on": "2025-05-14",
+                "place_guess": "Bordj Bou Arreridj, DZ",
+                "quality_grade": "research",
+                "geojson": {"coordinates": [4.76, 36.06]},
+                "taxon": {"id": 49995, "name": "Syrphidae", "rank": "family"},
+                "user": {"login": "observer-a"},
+            }
+        ],
+    }
+
+    first = client.post("/api/datasets/import", json=payload)
+    second = client.post("/api/datasets/import", json=payload)
+    library = client.get("/api/datasets/library")
+
+    assert first.status_code == 200
+    assert first.json()["created"] == 1
+    assert first.json()["totalStored"] == 1
+    assert second.status_code == 200
+    assert second.json()["created"] == 0
+    assert second.json()["updated"] == 1
+    assert second.json()["totalStored"] == 1
+    assert library.status_code == 200
+    assert library.json()["totalOccurrences"] == 1
+    assert library.json()["georeferencedOccurrences"] == 1
+
+
+def test_dataset_import_deduplicates_across_sources_and_keeps_provenance():
+    inaturalist_payload = {
+        "source": {"name": "iNaturalist", "type": "inaturalist"},
+        "observations": [
+            {
+                "id": 2001,
+                "observed_on": "2025-06-01",
+                "geojson": {"coordinates": [7.75, 36.9]},
+                "taxon": {"id": 49995, "name": "Syrphidae"},
+                "place_guess": "Annaba, DZ",
+            }
+        ],
+    }
+    gbif_payload = {
+        "source": {"name": "GBIF download", "type": "gbif", "url": "https://doi.org/10.15468/dl.test"},
+        "observations": [
+            {
+                "gbifID": "gbif-9001",
+                "scientificName": "Syrphidae",
+                "eventDate": "2025-06-01T12:00:00",
+                "decimalLatitude": 36.9,
+                "decimalLongitude": 7.75,
+                "locality": "Annaba",
+                "basisOfRecord": "HUMAN_OBSERVATION",
+            }
+        ],
+    }
+
+    first = client.post("/api/datasets/import", json=inaturalist_payload)
+    second = client.post("/api/datasets/import", json=gbif_payload)
+    library = client.get("/api/datasets/library").json()
+    occurrences = client.get("/api/datasets/occurrences").json()["results"]
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert second.json()["created"] == 0
+    assert second.json()["updated"] == 1
+    assert second.json()["sourceLinksCreated"] == 1
+    assert library["totalOccurrences"] == 1
+    assert len(library["sources"]) == 2
+    assert {source["type"] for source in library["sources"]} == {"inaturalist", "gbif"}
+    assert len(occurrences) == 1
+    assert len(occurrences[0]["sources"]) == 2
+
+
 def test_inaturalist_cache_status_endpoint():
     response = client.get("/api/inaturalist/cache/status")
 

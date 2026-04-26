@@ -3,14 +3,31 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+
+from app.services.occurrence_store import import_occurrences, library_summary, list_occurrences
 
 
 router = APIRouter(prefix="/api/datasets", tags=["datasets"])
 
 
 class DatasetSummaryRequest(BaseModel):
+    observations: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class DatasetSource(BaseModel):
+    name: str = "Import manuel"
+    type: str = "other"
+    citation: str | None = None
+    url: str | None = None
+    license: str | None = None
+    notes: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class DatasetImportRequest(BaseModel):
+    source: DatasetSource = Field(default_factory=DatasetSource)
     observations: list[dict[str, Any]] = Field(default_factory=list)
 
 
@@ -51,6 +68,28 @@ def build_recommendations(
         recommendations.append("Jeu de données utilisable pour exploration; nettoyage spatial requis avant SDM.")
 
     return recommendations
+
+
+@router.post("/import")
+async def dataset_import(payload: DatasetImportRequest):
+    if not payload.observations:
+        raise HTTPException(status_code=400, detail="Aucune observation à importer.")
+
+    source = payload.source.model_dump() if hasattr(payload.source, "model_dump") else payload.source.dict()
+    return import_occurrences(
+        source=source,
+        observations=payload.observations,
+    )
+
+
+@router.get("/library")
+async def dataset_library():
+    return library_summary()
+
+
+@router.get("/occurrences")
+async def dataset_occurrences(limit: int = 100):
+    return {"results": list_occurrences(limit=limit)}
 
 
 @router.post("/summary")

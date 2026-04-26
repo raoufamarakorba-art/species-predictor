@@ -23,6 +23,23 @@
   margin-top: 2px;
 }
 
+.status {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.saving {
+  color: var(--color-text-muted);
+}
+
+.saved {
+  color: var(--color-accent);
+}
+
+.error {
+  color: var(--color-danger);
+}
+
 .actions {
   display: flex;
   gap: 8px;

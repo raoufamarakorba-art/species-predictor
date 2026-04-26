@@ -17,6 +17,12 @@ client/dist/
 server/public/
 dist/
 
+# Local persistent data
+data/
+*.sqlite
+*.sqlite3
+*.db
+
 # IDE
 .vscode/settings.json
 .idea/

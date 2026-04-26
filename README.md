@@ -18,6 +18,8 @@ Exploration de données de présence d'espèces depuis **iNaturalist**, analyses
 | **Carte occurrences** | Visualisation des points géoréférencés |
 | **Exports données** | Export CSV complet et GeoJSON géographique |
 | **Qualité dataset** | Couverture coordonnées, doublons probables, recommandations |
+| **Base locale SQLite** | Stockage permanent, mise à jour et déduplication des occurrences |
+| **Import multi-source** | Ajout de données iNaturalist, GBIF, terrain ou littérature en CSV/JSON |
 | **Workflow ChatGPT** | Export prompt + métadonnées pour analyse externe dans ChatGPT Pro |
 | **Import analyse** | Réintégration d'une synthèse Markdown ou JSON générée dans ChatGPT |
 | **Préparation SDM** | Données et métadonnées prêtes pour analyses reproductibles |
@@ -117,9 +119,14 @@ species-predictor/
 ┌───────────────────▼──────────────────────────────────────┐
 │                    Serveur FastAPI (Python)               │
 │  /api/inaturalist  ──proxy──►  api.inaturalist.org        │
-│  /api/datasets     ─────────►  contrôles qualité locaux   │
+│  /api/datasets     ─────────►  contrôles qualité + SQLite │
 └──────────────────────────────────────────────────────────┘
-                    │ fichiers exportés
+                    │ fichiers exportés / base locale
+┌───────────────────▼──────────────────────────────────────┐
+│               data/species_predictor.sqlite3              │
+│  sources + occurrences standardisées + provenance          │
+└───────────────────┬──────────────────────────────────────┘
+                    │
 ┌───────────────────▼──────────────────────────────────────┐
 │                  ChatGPT Data Analysis                    │
 │  observations.csv + occurrences.geojson + prompt.md       │
@@ -157,6 +164,35 @@ Le champ `Localité` accepte un pays, une wilaya ou une ville iNaturalist. Pour 
 - `Syrphidae d'Algérie` reste accepté dans le champ taxon
 
 Quand un lieu est résolu, la requête utilise son `place_id` iNaturalist, ce qui évite de filtrer approximativement par texte.
+
+---
+
+## Base locale permanente
+
+Le mode `Base locale` ajoute une persistance SQLite côté backend.
+
+- Base par défaut : `data/species_predictor.sqlite3`
+- Le dossier `data/` est ignoré par Git
+- Variables possibles : `SPECIES_DATA_DIR` ou `SPECIES_DATABASE_PATH`
+- Sources suivies : `iNaturalist`, `GBIF`, `Terrain`, `Article`, `Autre`
+- Déduplication : identifiant de source quand il existe, puis empreinte `taxon + date + coordonnées`
+- Provenance : une occurrence dédupliquée peut conserver plusieurs sources associées
+
+Formats d'import acceptés dans l'interface :
+
+- JSON iNaturalist ou objet `{ "observations": [...] }`
+- GeoJSON `FeatureCollection`
+- CSV/TSV avec colonnes iNaturalist (`scientific_name`, `observed_on`, `latitude`, `longitude`, `place_guess`)
+- CSV/TSV Darwin Core (`scientificName`, `eventDate`, `decimalLatitude`, `decimalLongitude`, `locality`, `occurrenceID`, `basisOfRecord`)
+
+Endpoints utiles :
+
+| Endpoint | Description |
+|---|---|
+| `POST /api/datasets/import` | Importe et déduplique des observations |
+| `GET /api/datasets/library` | Résumé de la base locale |
+| `GET /api/datasets/occurrences` | Dernières occurrences stockées |
+| `POST /api/datasets/summary` | Résumé qualité d'un jeu temporaire |
 
 ---
 

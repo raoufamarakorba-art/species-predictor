@@ -11,6 +11,37 @@ export async function fetchDatasetSummary(observations) {
   return res.json()
 }
 
+export async function importDatasetRecords({ source, observations }) {
+  const res = await fetch('/api/datasets/import', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ source, observations }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || err.error || `Erreur import dataset: ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function fetchDatasetLibrary() {
+  const res = await fetch('/api/datasets/library')
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || err.error || `Erreur bibliothèque: ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function fetchStoredOccurrences(limit = 50) {
+  const res = await fetch(`/api/datasets/occurrences?limit=${encodeURIComponent(limit)}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || err.error || `Erreur occurrences stockées: ${res.status}`)
+  }
+  return res.json()
+}
+
 function csvValue(value) {
   if (value === null || value === undefined) return ''
   const text = String(value)

@@ -82,9 +82,105 @@ function StructuredAnalysis({ value }) {
       {Object.entries(value).map(([key, item]) => (
         <section key={key} className={styles.section}>
           <h4>{formatKey(key)}</h4>
-          <p>{formatValue(item)}</p>
+          <StructuredValue value={item} />
         </section>
       ))}
+    </div>
+  )
+}
+
+function StructuredValue({ value }) {
+  if (Array.isArray(value)) {
+    return <StructuredArray value={value} />
+  }
+
+  if (value && typeof value === 'object') {
+    return <StructuredObject value={value} />
+  }
+
+  return <p className={styles.scalarValue}>{formatScalar(value)}</p>
+}
+
+function StructuredObject({ value }) {
+  const entries = Object.entries(value)
+  if (entries.length === 0) return <p className={styles.scalarValue}>Aucune donnée.</p>
+
+  if (entries.every(([_key, item]) => isScalar(item))) {
+    return (
+      <dl className={styles.keyValueGrid}>
+        {entries.map(([key, item]) => (
+          <div key={key} className={styles.keyValueItem}>
+            <dt>{formatKey(key)}</dt>
+            <dd>{formatScalar(item)}</dd>
+          </div>
+        ))}
+      </dl>
+    )
+  }
+
+  return (
+    <div className={styles.nestedSections}>
+      {entries.map(([key, item]) => (
+        <section key={key} className={styles.nestedSection}>
+          <h5>{formatKey(key)}</h5>
+          <StructuredValue value={item} />
+        </section>
+      ))}
+    </div>
+  )
+}
+
+function StructuredArray({ value }) {
+  if (value.length === 0) return <p className={styles.scalarValue}>Aucun élément.</p>
+
+  if (value.every(isScalar)) {
+    return (
+      <ul className={styles.valueList}>
+        {value.map((item, index) => (
+          <li key={`${item}-${index}`}>{formatScalar(item)}</li>
+        ))}
+      </ul>
+    )
+  }
+
+  if (value.every(isFlatObject)) {
+    return <StructuredTable rows={value} />
+  }
+
+  return (
+    <div className={styles.itemList}>
+      {value.map((item, index) => (
+        <div key={index} className={styles.nestedCard}>
+          <StructuredValue value={item} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function StructuredTable({ rows }) {
+  const columns = Array.from(new Set(rows.flatMap(row => Object.keys(row))))
+
+  return (
+    <div className={styles.tableWrap}>
+      <table className={styles.structuredTable}>
+        <thead>
+          <tr>
+            {columns.map(column => (
+              <th key={column}>{formatKey(column)}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={index}>
+              {columns.map(column => (
+                <td key={column}>{formatScalar(row[column])}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -96,15 +192,22 @@ function formatKey(key) {
     .replace(/^./, char => char.toUpperCase())
 }
 
-function formatValue(value) {
-  if (Array.isArray(value)) {
-    if (value.every(item => item === null || ['string', 'number', 'boolean'].includes(typeof item))) {
-      return value.map(item => `- ${item}`).join('\n')
-    }
-    return JSON.stringify(value, null, 2)
-  }
-  if (value && typeof value === 'object') return JSON.stringify(value, null, 2)
+function formatScalar(value) {
+  if (typeof value === 'boolean') return value ? 'oui' : 'non'
   return String(value ?? '')
+}
+
+function isScalar(value) {
+  return value === null || ['string', 'number', 'boolean'].includes(typeof value)
+}
+
+function isFlatObject(value) {
+  return (
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    Object.values(value).every(isScalar)
+  )
 }
 
 function printPage() {

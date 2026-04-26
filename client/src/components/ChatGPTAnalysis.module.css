@@ -315,11 +315,99 @@
   margin-bottom: 5px;
 }
 
-.section p {
+.nestedSection h5 {
+  margin-bottom: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.section p,
+.scalarValue {
   white-space: pre-wrap;
   font-size: 13px;
   line-height: 1.6;
   color: var(--color-text-muted);
+}
+
+.keyValueGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.keyValueItem {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.keyValueItem dt {
+  margin-bottom: 2px;
+  color: var(--color-text-faint);
+  font-size: 11px;
+}
+
+.keyValueItem dd {
+  color: var(--color-text);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.nestedSections,
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nestedSection,
+.nestedCard {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.valueList {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.valueList li + li {
+  margin-top: 4px;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.structuredTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.structuredTable th,
+.structuredTable td {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.structuredTable th {
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  font-weight: 600;
 }
 
 @media (max-width: 720px) {

@@ -73,17 +73,32 @@ describe('ChatGPTAnalysis', () => {
     const { container } = render(<ChatGPTAnalysis {...defaultProps} />)
     const file = new window.File([
       JSON.stringify({
-        dataQuality: 'Research grade only for SDM.',
-        recommendations: ['Remove duplicates', 'Thin spatially'],
+        summary: {
+          taxon: 'Syrphidae',
+          locality: 'Bordj Bou Arréridj, DZ',
+          loadedObservations: 167,
+        },
+        spatialPattern: {
+          topPlaces: [
+            { place: 'Aïn Taghrout', observations: 34 },
+            { place: 'Bordj Zemoura', observations: 32 },
+          ],
+        },
+        recommendations: {
+          cleaning: ['Remove duplicates', 'Thin spatially'],
+        },
       }),
     ], 'analysis.json', { type: 'application/json' })
 
     fireEvent.change(analysisInput(container), { target: { files: [file] } })
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Data Quality' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Summary' })).toBeInTheDocument()
     })
-    expect(screen.getByText('Research grade only for SDM.')).toBeInTheDocument()
+    expect(screen.getByText('Bordj Bou Arréridj, DZ')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Spatial Pattern' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Place' })).toBeInTheDocument()
+    expect(screen.getByText('Aïn Taghrout')).toBeInTheDocument()
     expect(screen.getByText(/Remove duplicates/)).toBeInTheDocument()
     expect(screen.getByText(/Thin spatially/)).toBeInTheDocument()
   })

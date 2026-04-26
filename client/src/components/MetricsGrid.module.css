@@ -1,0 +1,41 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin: 1.5rem 0;
+}
+
+@media (max-width: 900px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--color-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.value {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.value.success { color: var(--color-accent); }
+.value.danger  { color: var(--color-danger); }
+.value.muted   { color: var(--color-text-muted); }
+
+.sub {
+  font-size: 11px;
+  color: var(--color-text-faint);
+  margin-top: 2px;
+}

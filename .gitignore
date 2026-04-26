@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Environment variables – NEVER commit!
+.env
+.env.local
+.env.production
+
+# Build output
+client/dist/
+server/public/
+dist/
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Cache
+.cache/
+.vite/
+.pytest_cache/
+.ruff_cache/

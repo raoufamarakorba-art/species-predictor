@@ -1,6 +1,4 @@
 import { useMemo, useRef, useState } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import {
   buildChatGPTMetadata,
   buildChatGPTPrompt,
@@ -11,9 +9,8 @@ import {
   observationsToCsv,
   observationsToGeoJson,
 } from '../services/datasets.js'
+import { AnalysisReport, acceptedAnalysisFiles, analysisFromFile } from './AnalysisReport.jsx'
 import styles from './ChatGPTAnalysis.module.css'
-
-const markdownPlugins = [remarkGfm]
 
 export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSummary, speciesName }) {
   const [analysis, setAnalysis] = useState(null)
@@ -65,12 +62,7 @@ export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSum
     const file = event.target.files?.[0]
     if (!file) return
 
-    const text = await file.text()
-    try {
-      setAnalysis({ type: 'json', name: file.name, value: JSON.parse(text) })
-    } catch {
-      setAnalysis({ type: 'markdown', name: file.name, value: text })
-    }
+    setAnalysis(await analysisFromFile(file))
     event.target.value = ''
   }
 
@@ -99,7 +91,7 @@ export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSum
             ref={fileInputRef}
             className={styles.fileInput}
             type="file"
-            accept=".md,.txt,.json,application/json,text/markdown,text/plain"
+            accept={acceptedAnalysisFiles}
             onChange={importAnalysis}
           />
         </div>
@@ -112,32 +104,7 @@ export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSum
         </div>
       </div>
 
-      {analysis && (
-        <div className={styles.panel}>
-          <div className={styles.header}>
-            <div>
-              <span className={styles.kicker}>Analyse importée</span>
-              <h3 className={styles.title}>{analysis.name}</h3>
-            </div>
-            <button className={styles.btn} onClick={() => setAnalysis(null)}>Effacer</button>
-          </div>
-          {analysis.type === 'json' ? (
-            <StructuredAnalysis value={analysis.value} />
-          ) : (
-            <MarkdownAnalysis value={analysis.value} />
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function MarkdownAnalysis({ value }) {
-  return (
-    <div className={styles.markdown}>
-      <ReactMarkdown remarkPlugins={markdownPlugins}>
-        {value}
-      </ReactMarkdown>
+      <AnalysisReport analysis={analysis} onClear={() => setAnalysis(null)} />
     </div>
   )
 }
@@ -149,35 +116,4 @@ function Metric({ label, value }) {
       <strong className={styles.metricValue}>{value}</strong>
     </div>
   )
-}
-
-function StructuredAnalysis({ value }) {
-  return (
-    <div className={styles.structured}>
-      {Object.entries(value).map(([key, item]) => (
-        <section key={key} className={styles.section}>
-          <h4>{formatKey(key)}</h4>
-          <p>{formatValue(item)}</p>
-        </section>
-      ))}
-    </div>
-  )
-}
-
-function formatKey(key) {
-  return key
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/[_-]+/g, ' ')
-    .replace(/^./, char => char.toUpperCase())
-}
-
-function formatValue(value) {
-  if (Array.isArray(value)) {
-    if (value.every(item => item === null || ['string', 'number', 'boolean'].includes(typeof item))) {
-      return value.map(item => `- ${item}`).join('\n')
-    }
-    return JSON.stringify(value, null, 2)
-  }
-  if (value && typeof value === 'object') return JSON.stringify(value, null, 2)
-  return String(value ?? '')
 }

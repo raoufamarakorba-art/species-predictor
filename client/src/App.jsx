@@ -6,6 +6,7 @@ import Charts from './components/Charts.jsx'
 import DataExports from './components/DataExports.jsx'
 import DatasetQuality from './components/DatasetQuality.jsx'
 import ChatGPTAnalysis from './components/ChatGPTAnalysis.jsx'
+import ReportImportMode from './components/ReportImportMode.jsx'
 import ObservationsList from './components/ObservationsList.jsx'
 import { useSpeciesData } from './hooks/useSpeciesData.js'
 import styles from './App.module.css'
@@ -18,7 +19,13 @@ const TABS = [
   { id: 'obs',     label: 'Observations' },
 ]
 
+const MODES = [
+  { id: 'search', label: 'Recherche iNaturalist' },
+  { id: 'report', label: 'Rapport Markdown' },
+]
+
 export default function App() {
+  const [mode, setMode] = useState('search')
   const [activeTab, setActiveTab] = useState('data')
   const { observations, taxon, stats, datasetSummary, loading, error, search } = useSpeciesData()
 
@@ -38,79 +45,99 @@ export default function App() {
       </header>
 
       <main className={styles.main}>
-        <SearchBar onSearch={search} loading={loading} />
+        <div className={styles.modeSwitch} aria-label="Mode d'analyse">
+          {MODES.map(item => (
+            <button
+              key={item.id}
+              className={`${styles.modeBtn} ${mode === item.id ? styles.activeModeBtn : ''}`}
+              onClick={() => setMode(item.id)}
+              aria-pressed={mode === item.id}
+              type="button"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
 
-        {error && (
-          <div className={styles.errorBanner}>{error}</div>
-        )}
-
-        {loading && (
-          <div className={styles.loadingBanner}>
-            <span className={styles.loadingDot} />
-            Récupération des données iNaturalist…
-          </div>
-        )}
-
-        {hasData && (
+        {mode === 'report' ? (
+          <ReportImportMode />
+        ) : (
           <>
-            <SpeciesInfo taxon={taxon} speciesName={lastSearch} />
+            <SearchBar onSearch={search} loading={loading} />
 
-            <div className={styles.tabs}>
-              {TABS.map(t => (
-                <button
-                  key={t.id}
-                  className={`${styles.tab} ${activeTab === t.id ? styles.activeTab : ''}`}
-                  onClick={() => setActiveTab(t.id)}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+            {error && (
+              <div className={styles.errorBanner}>{error}</div>
+            )}
 
-            {activeTab === 'data' && (
+            {loading && (
+              <div className={styles.loadingBanner}>
+                <span className={styles.loadingDot} />
+                Récupération des données iNaturalist…
+              </div>
+            )}
+
+            {hasData && (
               <>
-                <DataExports observations={observations} speciesName={lastSearch} />
-                <MetricsGrid stats={stats} />
-                <DatasetQuality summary={datasetSummary} />
-                <Suspense fallback={<div className={styles.loadingBanner}>Chargement de la carte…</div>}>
-                  <OccurrenceMap observations={observations} />
-                </Suspense>
-                <Charts stats={stats} />
+                <SpeciesInfo taxon={taxon} speciesName={lastSearch} />
+
+                <div className={styles.tabs}>
+                  {TABS.map(t => (
+                    <button
+                      key={t.id}
+                      className={`${styles.tab} ${activeTab === t.id ? styles.activeTab : ''}`}
+                      onClick={() => setActiveTab(t.id)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                {activeTab === 'data' && (
+                  <>
+                    <DataExports observations={observations} speciesName={lastSearch} />
+                    <MetricsGrid stats={stats} />
+                    <DatasetQuality summary={datasetSummary} />
+                    <Suspense fallback={<div className={styles.loadingBanner}>Chargement de la carte…</div>}>
+                      <OccurrenceMap observations={observations} />
+                    </Suspense>
+                    <Charts stats={stats} />
+                  </>
+                )}
+
+                {activeTab === 'chatgpt' && (
+                  <div className={styles.tabContent}>
+                    <ChatGPTAnalysis
+                      observations={observations}
+                      taxon={taxon}
+                      stats={stats}
+                      datasetSummary={datasetSummary}
+                      speciesName={lastSearch}
+                    />
+                  </div>
+                )}
+
+                {activeTab === 'obs' && (
+                  <div className={styles.tabContent}>
+                    <ObservationsList observations={observations} total={stats?.total} />
+                  </div>
+                )}
               </>
             )}
 
-            {activeTab === 'chatgpt' && (
-              <div className={styles.tabContent}>
-                <ChatGPTAnalysis
-                  observations={observations}
-                  taxon={taxon}
-                  stats={stats}
-                  datasetSummary={datasetSummary}
-                  speciesName={lastSearch}
-                />
-              </div>
-            )}
-
-            {activeTab === 'obs' && (
-              <div className={styles.tabContent}>
-                <ObservationsList observations={observations} total={stats?.total} />
+            {!hasData && !loading && !error && (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>◎</div>
+                <p>Recherchez une espèce, une famille ou un taxon pour commencer l&apos;analyse</p>
+                <div className={styles.examples}>
+                  {['Lynx lynx','Ciconia ciconia','Quercus ilex','Canis lupus'].map(s => (
+                    <button key={s} className={styles.exampleBtn} onClick={() => search({ speciesName: s })}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </>
-        )}
-
-        {!hasData && !loading && !error && (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>◎</div>
-            <p>Recherchez une espèce, une famille ou un taxon pour commencer l&apos;analyse</p>
-            <div className={styles.examples}>
-              {['Lynx lynx','Ciconia ciconia','Quercus ilex','Canis lupus'].map(s => (
-                <button key={s} className={styles.exampleBtn} onClick={() => search({ speciesName: s })}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
         )}
       </main>
     </div>

@@ -48,6 +48,37 @@
   padding: 28px 24px 60px;
 }
 
+.modeSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 18px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.modeBtn {
+  height: 32px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.modeBtn:hover {
+  color: var(--color-text);
+}
+
+.activeModeBtn {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+}
+
 .errorBanner {
   font-size: 13px;
   color: var(--color-danger);
@@ -146,4 +177,14 @@
   background: var(--color-accent-light);
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+@media (max-width: 640px) {
+  .modeSwitch {
+    display: flex;
+  }
+
+  .modeBtn {
+    flex: 1;
+  }
 }

@@ -52,6 +52,14 @@
   margin-bottom: 16px;
 }
 
+.description {
+  max-width: 640px;
+  margin: 0 0 14px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .btn,
 .btnPrimary {
   height: 32px;

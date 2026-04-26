@@ -16,4 +16,8 @@ export default defineConfig({
     outDir: '../server/public',
     emptyOutDir: true,
   },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.js',
+  },
 })

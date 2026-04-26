@@ -14,6 +14,7 @@ import styles from './ChatGPTAnalysis.module.css'
 
 export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSummary, speciesName }) {
   const [analysis, setAnalysis] = useState(null)
+  const [analysisError, setAnalysisError] = useState('')
   const fileInputRef = useRef(null)
 
   const metadata = useMemo(
@@ -62,7 +63,12 @@ export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSum
     const file = event.target.files?.[0]
     if (!file) return
 
-    setAnalysis(await analysisFromFile(file))
+    try {
+      setAnalysisError('')
+      setAnalysis(await analysisFromFile(file))
+    } catch (err) {
+      setAnalysisError(err.message)
+    }
     event.target.value = ''
   }
 
@@ -95,6 +101,9 @@ export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSum
             onChange={importAnalysis}
           />
         </div>
+        {analysisError && (
+          <p className={styles.errorMessage}>{analysisError}</p>
+        )}
 
         <div className={styles.metaGrid}>
           <Metric label="Total iNaturalist" value={metadata.dataset.totalObservations} />

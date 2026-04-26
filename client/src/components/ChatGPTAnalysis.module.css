@@ -60,6 +60,44 @@
   line-height: 1.55;
 }
 
+.dropzone {
+  display: flex;
+  min-height: 116px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 14px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  text-align: center;
+  cursor: pointer;
+}
+
+.dropzone strong {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dropzone span {
+  font-size: 12px;
+}
+
+.dropzone:hover,
+.activeDropzone {
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+}
+
+.errorMessage {
+  margin-top: -4px;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+
 .btn,
 .btnPrimary {
   height: 32px;
@@ -97,6 +135,13 @@
 
 .fileInput {
   display: none;
+}
+
+.reportActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .metaGrid {
@@ -282,7 +327,23 @@
     flex-direction: column;
   }
 
+  .reportActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .metaGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media print {
+  .reportActions {
+    display: none;
+  }
+
+  .markdown {
+    max-height: none;
+    overflow: visible;
   }
 }

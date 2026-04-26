@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:client": "cd client && npm run dev",
-    "dev:server": "python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --app-dir server",
+    "dev:server": "python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --app-dir server",
+    "dev:server:reload": "python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --app-dir server",
     "test:server": "python -m pytest server/tests",
     "build": "cd client && npm run build",
     "start": "python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --app-dir server",

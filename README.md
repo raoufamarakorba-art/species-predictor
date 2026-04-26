@@ -2,7 +2,7 @@
 
 Extraction de données de présence d'espèces depuis **iNaturalist**, analyse statistique et synthèse prédictive par biotope grâce à **Ollama** en local.
 
-![CI](https://github.com/votre-username/species-predictor/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/raoufamarakorba-art/species-predictor-ollama/actions/workflows/ci.yml/badge.svg)
 
 ---
 
@@ -38,8 +38,8 @@ Extraction de données de présence d'espèces depuis **iNaturalist**, analyse s
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/votre-username/species-predictor.git
-cd species-predictor
+git clone https://github.com/raoufamarakorba-art/species-predictor-ollama.git
+cd species-predictor-ollama
 ```
 
 ### 2. Configurer les variables d'environnement
@@ -51,12 +51,26 @@ cp .env.example .env
 
 ### 3. Préparer Ollama
 
+Sur Windows, vous pouvez installer Ollama avec `winget` :
+
+```powershell
+winget install --id Ollama.Ollama --source winget
+```
+
+Après installation, ouvrez un nouveau terminal PowerShell pour récupérer le PATH. Si `ollama` n'est pas encore reconnu dans le terminal courant, utilisez le chemin complet :
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" pull mistral
+```
+
+Commande standard une fois le PATH disponible :
+
 ```bash
 ollama pull mistral
 ollama serve
 ```
 
-Gardez `ollama serve` ouvert dans un terminal séparé.
+Gardez `ollama serve` ouvert dans un terminal séparé si Ollama n'est pas déjà lancé en arrière-plan.
 
 ### 4. Installer toutes les dépendances
 
@@ -143,6 +157,7 @@ Le serveur joue le rôle de proxy pour deux raisons :
 | `npm run dev` | Lance client + serveur en parallèle |
 | `npm run dev:client` | Frontend seul (port 5173) |
 | `npm run dev:server` | Backend seul (port 8000) |
+| `npm run dev:server:reload` | Backend seul avec auto-reload Uvicorn |
 | `npm run test:server` | Tests backend FastAPI |
 | `npm run build` | Build production du frontend |
 | `npm start` | Lance le serveur (production) |
@@ -188,6 +203,8 @@ NODE_ENV=production npm start
 ```
 OLLAMA_URL=http://localhost:11434
 OLLAMA_MODEL=mistral
+OLLAMA_TIMEOUT_SECONDS=300
+OLLAMA_NUM_PREDICT=1200
 NODE_ENV=production
 ALLOWED_ORIGIN=https://votre-domaine.com
 PORT=8000

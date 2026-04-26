@@ -15,6 +15,8 @@ load_dotenv(ROOT_DIR / ".env")
 class Settings:
     ollama_url: str = os.getenv("OLLAMA_URL", "http://localhost:11434")
     ollama_model: str = os.getenv("OLLAMA_MODEL", "mistral")
+    ollama_timeout_seconds: float = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "300"))
+    ollama_num_predict: int = int(os.getenv("OLLAMA_NUM_PREDICT", "1200"))
     port: int = int(os.getenv("PORT", "8000"))
     allowed_origin: str = os.getenv("ALLOWED_ORIGIN", "http://localhost:5173")
     node_env: str = os.getenv("NODE_ENV", "development")

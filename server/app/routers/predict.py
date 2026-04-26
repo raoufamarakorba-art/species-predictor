@@ -15,7 +15,51 @@ from app.services.ollama import OllamaClient
 
 router = APIRouter(prefix="/api/predict", tags=["predict"])
 MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"]
-ollama = OllamaClient(settings.ollama_url, settings.ollama_model)
+PREDICTION_RESPONSE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "summary": {"type": "string"},
+        "predictions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "biotope": {"type": "string"},
+                    "probability": {"type": "number", "minimum": 0, "maximum": 100},
+                    "abundance": {"type": "string"},
+                    "confidence": {"type": "string"},
+                    "season": {"type": "string"},
+                    "notes": {"type": "string"},
+                },
+                "required": ["biotope", "probability", "abundance", "confidence", "season", "notes"],
+                "additionalProperties": False,
+            },
+        },
+        "seasonality": {"type": "string"},
+        "trend": {"type": "string"},
+        "trendExplanation": {"type": "string"},
+        "keyFactors": {"type": "array", "items": {"type": "string"}},
+        "conservation": {"type": "string"},
+        "dataQuality": {"type": "string"},
+    },
+    "required": [
+        "summary",
+        "predictions",
+        "seasonality",
+        "trend",
+        "trendExplanation",
+        "keyFactors",
+        "conservation",
+        "dataQuality",
+    ],
+    "additionalProperties": False,
+}
+ollama = OllamaClient(
+    settings.ollama_url,
+    settings.ollama_model,
+    settings.ollama_timeout_seconds,
+    settings.ollama_num_predict,
+)
 
 
 class PredictRequest(BaseModel):
@@ -33,7 +77,41 @@ def extract_prediction_json(raw: str) -> dict[str, Any]:
     match = re.search(r"\{[\s\S]*\}", raw)
     if not match:
         raise ValueError("Réponse non-JSON reçue du modèle")
-    return json.loads(match.group(0))
+    return normalize_prediction_json(json.loads(match.group(0)))
+
+
+def normalize_prediction_json(prediction: dict[str, Any]) -> dict[str, Any]:
+    aliases = {
+        "résumé": "summary",
+        "resume": "summary",
+        "saisonnalite": "seasonality",
+        "saisonnalité": "seasonality",
+        "tendance": "trend",
+        "explicationTendance": "trendExplanation",
+        "facteursCles": "keyFactors",
+        "facteursClés": "keyFactors",
+        "keyFacteurs": "keyFactors",
+        "qualiteDonnees": "dataQuality",
+        "qualitéDonnées": "dataQuality",
+    }
+
+    for alias, canonical in aliases.items():
+        if canonical not in prediction and alias in prediction:
+            prediction[canonical] = prediction[alias]
+
+    if not isinstance(prediction.get("predictions"), list):
+        prediction["predictions"] = []
+    for item in prediction["predictions"]:
+        probability = item.get("probability") if isinstance(item, dict) else None
+        if isinstance(probability, (int, float)):
+            if 0 <= probability <= 1:
+                probability *= 100
+            item["probability"] = max(0, min(100, round(probability)))
+
+    if not isinstance(prediction.get("keyFactors"), list):
+        prediction["keyFactors"] = []
+
+    return prediction
 
 
 def build_prompt(payload: PredictRequest) -> str:
@@ -78,7 +156,11 @@ def build_prompt(payload: PredictRequest) -> str:
 - Principales zones: {main_places}
 - Biotope ciblé: {biotope}
 
-Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans balises markdown:
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans balises markdown.
+Le JSON doit contenir toutes ces clés: summary, predictions, seasonality, trend, trendExplanation, keyFactors, conservation, dataQuality.
+Même si les données sont faibles, remplis les champs avec une incertitude explicite.
+Dans predictions, probability est un nombre entier de 0 à 100, jamais une fraction 0-1.
+Format attendu:
 {{"summary":"...","predictions":[{{"biotope":"Forêt","probability":75,"abundance":"Modérée","confidence":"Haute","season":"Printemps-Été","notes":"..."}},{{"biotope":"Prairies","probability":45,"abundance":"Faible","confidence":"Moyenne","season":"Été","notes":"..."}},{{"biotope":"Zones humides","probability":30,"abundance":"Rare","confidence":"Basse","season":"Variable","notes":"..."}},{{"biotope":"Montagne","probability":20,"abundance":"Rare","confidence":"Basse","season":"Été","notes":"..."}}],"seasonality":"...","trend":"stable","trendExplanation":"...","keyFactors":["facteur1","facteur2"],"conservation":"...","dataQuality":"..."}}"""
 
 
@@ -91,6 +173,8 @@ async def status():
             "models": models,
             "configuredModel": settings.ollama_model,
             "modelReady": model_is_available(models),
+            "timeoutSeconds": settings.ollama_timeout_seconds,
+            "numPredict": settings.ollama_num_predict,
         }
     except RuntimeError as exc:
         return {
@@ -98,6 +182,8 @@ async def status():
             "error": str(exc),
             "configuredModel": settings.ollama_model,
             "modelReady": False,
+            "timeoutSeconds": settings.ollama_timeout_seconds,
+            "numPredict": settings.ollama_num_predict,
         }
 
 
@@ -131,7 +217,7 @@ async def predict(payload: PredictRequest):
         )
 
     try:
-        raw = await ollama.chat(build_prompt(payload))
+        raw = await ollama.chat(build_prompt(payload), response_format=PREDICTION_RESPONSE_SCHEMA)
         prediction = extract_prediction_json(raw)
         return {"success": True, "prediction": prediction, "model": settings.ollama_model}
     except (RuntimeError, ValueError, json.JSONDecodeError) as exc:

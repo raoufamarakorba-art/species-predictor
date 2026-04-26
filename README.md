@@ -1,8 +1,8 @@
 # 🌿 Species Predictor
 
-Extraction de données de présence d'espèces depuis **iNaturalist**, analyse statistique et synthèse prédictive par biotope grâce à **Ollama** en local.
+Exploration de données de présence d'espèces depuis **iNaturalist**, analyses statistiques locales, exports scientifiques et workflow **ChatGPT Data Analysis** par fichiers.
 
-![CI](https://github.com/raoufamarakorba-art/species-predictor-ollama/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/raoufamarakorba-art/species-predictor/actions/workflows/ci.yml/badge.svg)
 
 ---
 
@@ -18,8 +18,9 @@ Extraction de données de présence d'espèces depuis **iNaturalist**, analyse s
 | **Carte occurrences** | Visualisation des points géoréférencés |
 | **Exports données** | Export CSV complet et GeoJSON géographique |
 | **Qualité dataset** | Couverture coordonnées, doublons probables, recommandations |
-| **Prédictions IA** | Probabilité de présence × biotope via Ollama |
-| **Conservation** | Analyse de tendance + recommandations |
+| **Workflow ChatGPT** | Export prompt + métadonnées pour analyse externe dans ChatGPT Pro |
+| **Import analyse** | Réintégration d'une synthèse Markdown ou JSON générée dans ChatGPT |
+| **Préparation SDM** | Données et métadonnées prêtes pour analyses reproductibles |
 
 ---
 
@@ -28,8 +29,7 @@ Extraction de données de présence d'espèces depuis **iNaturalist**, analyse s
 - **Node.js** ≥ 18
 - **npm** ≥ 9
 - **Python** ≥ 3.10
-- **Ollama** installé localement : [ollama.com](https://ollama.com/)
-- Un modèle Ollama téléchargé, par exemple `mistral`
+- Optionnel : un abonnement ChatGPT Plus/Pro/Team pour analyser les exports dans ChatGPT Data Analysis
 
 ---
 
@@ -38,54 +38,33 @@ Extraction de données de présence d'espèces depuis **iNaturalist**, analyse s
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/raoufamarakorba-art/species-predictor-ollama.git
-cd species-predictor-ollama
+git clone https://github.com/raoufamarakorba-art/species-predictor.git
+cd species-predictor
 ```
 
 ### 2. Configurer les variables d'environnement
 
 ```bash
 cp .env.example .env
-# Éditez .env si vous voulez changer OLLAMA_URL, OLLAMA_MODEL ou le port
+# Éditez .env si vous voulez changer le port, CORS ou le cache iNaturalist
 ```
 
-### 3. Préparer Ollama
-
-Sur Windows, vous pouvez installer Ollama avec `winget` :
-
-```powershell
-winget install --id Ollama.Ollama --source winget
-```
-
-Après installation, ouvrez un nouveau terminal PowerShell pour récupérer le PATH. Si `ollama` n'est pas encore reconnu dans le terminal courant, utilisez le chemin complet :
-
-```powershell
-& "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" pull mistral
-```
-
-Commande standard une fois le PATH disponible :
-
-```bash
-ollama pull mistral
-ollama serve
-```
-
-Gardez `ollama serve` ouvert dans un terminal séparé si Ollama n'est pas déjà lancé en arrière-plan.
-
-### 4. Installer toutes les dépendances
+### 3. Installer toutes les dépendances
 
 ```bash
 npm run install:all
 ```
 
-### 5. Lancer en développement
+### 4. Lancer en développement
 
 ```bash
 npm run dev
 ```
 
 - **Frontend** → http://localhost:5173
-- **Backend API** → http://localhost:8000
+- **Backend API** → http://127.0.0.1:8000
+
+Un seul terminal suffit. Le script lance le frontend Vite et le backend FastAPI en parallèle.
 
 ---
 
@@ -101,11 +80,11 @@ species-predictor/
 │       │   ├── SpeciesInfo.jsx    # En-tête espèce + photo
 │       │   ├── MetricsGrid.jsx    # Cartes de métriques
 │       │   ├── Charts.jsx         # Graphiques Chart.js
-│       │   ├── Predictions.jsx    # Panel prédictions IA
+│       │   ├── ChatGPTAnalysis.jsx # Export/import analyse ChatGPT
 │       │   └── ObservationsList.jsx
 │       ├── services/
 │       │   ├── inaturalist.js     # Appels API iNaturalist + stats
-│       │   └── api.js             # Appels backend (prédictions)
+│       │   └── chatgptExport.js   # Génération prompt/métadonnées
 │       ├── hooks/
 │       │   └── useSpeciesData.js  # Hook principal (état global)
 │       └── App.jsx
@@ -115,10 +94,8 @@ species-predictor/
 │   │   ├── main.py                # Point d'entrée FastAPI
 │   │   ├── config.py              # Configuration .env
 │   │   ├── routers/
-│   │   │   ├── predict.py         # Endpoint Ollama
-│   │   │   └── inaturalist.py     # Proxy iNaturalist
-│   │   └── services/
-│   │       └── ollama.py          # Client Ollama
+│   │   │   ├── inaturalist.py     # Proxy iNaturalist
+│   │   │   └── datasets.py        # Résumé qualité dataset
 │   └── requirements.txt           # Dépendances Python
 │
 ├── .github/workflows/ci.yml       # CI GitHub Actions
@@ -134,19 +111,40 @@ species-predictor/
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    Navigateur (React)                    │
-│  SearchBar → useSpeciesData hook → Charts / Predictions  │
+│  SearchBar → useSpeciesData hook → Charts / ChatGPT pack │
 └───────────────────┬──────────────────────────────────────┘
                     │ /api/*
 ┌───────────────────▼──────────────────────────────────────┐
 │                    Serveur FastAPI (Python)               │
 │  /api/inaturalist  ──proxy──►  api.inaturalist.org        │
-│  /api/predict      ──────────►  Ollama local              │
+│  /api/datasets     ─────────►  contrôles qualité locaux   │
+└──────────────────────────────────────────────────────────┘
+                    │ fichiers exportés
+┌───────────────────▼──────────────────────────────────────┐
+│                  ChatGPT Data Analysis                    │
+│  observations.csv + occurrences.geojson + prompt.md       │
 └──────────────────────────────────────────────────────────┘
 ```
 
 Le serveur joue le rôle de proxy pour deux raisons :
 1. **Cohérence réseau** : le client appelle toujours `/api/*`, sans dépendre directement des APIs externes
-2. **Rate limiting** : protection contre les appels IA en rafale vers Ollama
+2. **Qualité des requêtes** : résolution fiable des taxons/lieux en IDs iNaturalist et cache côté backend
+
+---
+
+## Workflow ChatGPT
+
+L'application n'appelle plus de modèle IA local. Elle prépare les données pour ChatGPT Data Analysis, que vous utilisez ensuite avec votre abonnement ChatGPT.
+
+1. Recherchez un taxon et une zone, par exemple `Syrphidae d'Algérie`.
+2. Téléchargez `CSV`, `GeoJSON`, `Métadonnées` et `Prompt ChatGPT`.
+3. Importez ces fichiers dans une conversation ChatGPT avec Data Analysis.
+4. Demandez l'analyse, les graphiques, les limites méthodologiques ou un rapport Markdown.
+5. Importez le Markdown ou JSON généré dans l'onglet `Analyse ChatGPT`.
+
+Ce choix évite de dépendre d'un GPU local, garde l'application rapide sur PC standard et sépare clairement les statistiques déterministes de l'interprétation assistée par IA.
+
+Voir aussi : [docs/CHATGPT_WORKFLOW.md](docs/CHATGPT_WORKFLOW.md)
 
 ---
 
@@ -201,13 +199,10 @@ NODE_ENV=production npm start
 
 ### Variables d'environnement en production
 ```
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=mistral
-OLLAMA_TIMEOUT_SECONDS=300
-OLLAMA_NUM_PREDICT=1200
 NODE_ENV=production
 ALLOWED_ORIGIN=https://votre-domaine.com
 PORT=8000
+INATURALIST_CACHE_TTL_SECONDS=300
 ```
 
 ---
@@ -229,7 +224,7 @@ Ce projet est conçu comme un **outil d'exploration et de visualisation** des do
 - Préparer visuellement un jeu de données avant analyse approfondie
 - Sensibiliser et communiquer autour de la biodiversité
 
-Les prédictions générées par le LLM (Ollama/Mistral) sont des **synthèses qualitatives indicatives**, non des modèles statistiques validés. Elles ne sont pas reproductibles au sens scientifique et ne peuvent pas être soumises telles quelles dans un article peer-reviewed.
+Les analyses générées dans ChatGPT sont des **synthèses qualitatives assistées**, non des modèles statistiques validés. Elles peuvent aider à interpréter un jeu de données et préparer un rapport exploratoire, mais ne remplacent pas un modèle de distribution d'espèces reproductible.
 
 ---
 
@@ -247,7 +242,7 @@ Les prédictions générées par le LLM (Ollama/Mistral) sont des **synthèses q
 - [ ] Variables topographiques (altitude, pente, exposition) via **SRTM**
 
 #### Niveau 3 — Modèles de distribution (SDM)
-- [ ] Remplacer les prédictions LLM par **MaxEnt** (Java, licence libre)
+- [ ] Ajouter **MaxEnt** (Java, licence libre) comme modèle reproductible
 - [ ] Implémenter `biomod2` (R) : BRT, Random Forest, GLM, GAM ensemblés
 - [ ] API Python vers `sdm` ou `ENMeval` pour la calibration automatique
 

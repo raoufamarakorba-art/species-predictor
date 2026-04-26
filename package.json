@@ -1,7 +1,7 @@
 {
   "name": "species-predictor",
-  "version": "0.2.0",
-  "description": "Species presence and abundance prediction using iNaturalist data and Ollama",
+  "version": "0.3.0",
+  "description": "Species occurrence explorer using iNaturalist data and ChatGPT-ready exports",
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",

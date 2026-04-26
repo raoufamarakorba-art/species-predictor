@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
 import { fetchObservations, computeStats } from '../services/inaturalist.js'
-import { fetchPrediction } from '../services/api.js'
 import { fetchDatasetSummary } from '../services/datasets.js'
 
 const initialState = {
@@ -8,20 +7,17 @@ const initialState = {
   taxon: null,
   stats: null,
   datasetSummary: null,
-  prediction: null,
   loading: false,
-  loadingPredict: false,
   error: null,
-  errorPredict: null,
 }
 
 export function useSpeciesData() {
   const [state, setState] = useState(initialState)
 
-  const search = useCallback(async ({ speciesName, placeName, biotope }) => {
+  const search = useCallback(async ({ speciesName, placeName }) => {
     if (!speciesName.trim()) return
 
-    setState(s => ({ ...s, loading: true, error: null, prediction: null, errorPredict: null }))
+    setState(s => ({ ...s, loading: true, error: null }))
 
     try {
       // 1 – Fetch observations from iNaturalist
@@ -55,19 +51,6 @@ export function useSpeciesData() {
         datasetSummary,
         loading: false,
       }))
-
-      // 2 – Fetch AI predictions (async, non-blocking)
-      setState(s => ({ ...s, loadingPredict: true }))
-      try {
-        const result = await fetchPrediction({ observations, taxon, speciesName: taxon?.name || speciesName, biotope })
-        setState(s => ({ ...s, prediction: result.prediction, loadingPredict: false }))
-      } catch (predErr) {
-        setState(s => ({
-          ...s,
-          loadingPredict: false,
-          errorPredict: predErr.message,
-        }))
-      }
     } catch (err) {
       setState(s => ({ ...s, loading: false, error: err.message }))
     }

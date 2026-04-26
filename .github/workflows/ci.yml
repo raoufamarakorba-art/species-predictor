@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install client dependencies
+        run: npm ci --prefix client
+
+      - name: Install backend dependencies
+        run: python -m pip install -r server/requirements.txt
+
+      - name: Check backend
+        run: |
+          python -m compileall server/app
+          python -m pytest server/tests
+          python -m pip check
+
+      - name: Check frontend
+        run: |
+          npm run lint --prefix client
+          npm run build
+
+      - name: Audit dependencies
+        run: |
+          npm audit --audit-level=moderate
+          npm audit --prefix client --audit-level=moderate

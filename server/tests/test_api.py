@@ -135,6 +135,76 @@ def test_inaturalist_autocomplete_uses_proxy_layer(monkeypatch):
     assert payload["results"][0]["name"] == "Lynx lynx"
 
 
+def test_inaturalist_combined_taxon_place_query_is_split():
+    taxon, place = inaturalist_router.split_taxon_place_query("Syrphidae d'Algérie")
+
+    assert taxon == "Syrphidae"
+    assert place == "Algérie"
+
+
+def test_inaturalist_observations_resolve_taxon_and_place_ids(monkeypatch):
+    calls = []
+
+    async def fake_fetch(path, params=None):
+        calls.append((path, dict(params or {})))
+        if path == "/taxa/autocomplete":
+            return {
+                "results": [
+                    {
+                        "id": 49995,
+                        "name": "Syrphidae",
+                        "rank": "family",
+                        "preferred_common_name": "Hover Flies",
+                    }
+                ]
+            }
+        if path == "/search":
+            return {
+                "results": [
+                    {
+                        "type": "Place",
+                        "matches": ["Algeria", "Algérie"],
+                        "record": {
+                            "id": 7300,
+                            "name": "Algeria",
+                            "display_name": "Algeria",
+                            "place_type": 12,
+                        },
+                    }
+                ]
+            }
+        if path == "/observations":
+            assert params["taxon_id"] == 49995
+            assert params["place_id"] == 7300
+            assert params["verifiable"] == "true"
+            assert "quality_grade" not in params
+            assert "taxon_name" not in params
+            assert "place_name" not in params
+            return {
+                "total_results": 1202,
+                "results": [{"id": 1, "taxon": {"id": 50000, "name": "Episyrphus balteatus"}}],
+            }
+        raise AssertionError(f"Unexpected path: {path}")
+
+    monkeypatch.setattr(inaturalist_router, "fetch_inaturalist", fake_fetch)
+
+    response = client.get("/api/inaturalist/observations?taxon_name=Syrphidae%20d%27Alg%C3%A9rie")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total_results"] == 1202
+    assert payload["resolved"]["taxon"] == {
+        "id": 49995,
+        "name": "Syrphidae",
+        "rank": "family",
+        "preferred_common_name": "Hover Flies",
+        "iconic_taxon_name": None,
+        "default_photo": None,
+    }
+    assert payload["resolved"]["place"]["id"] == 7300
+    assert [path for path, _params in calls] == ["/taxa/autocomplete", "/search", "/observations"]
+
+
 def test_dataset_summary_reports_quality_metrics():
     observations = [
         {

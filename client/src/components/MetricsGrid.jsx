@@ -10,7 +10,11 @@ export default function MetricsGrid({ stats }) {
 
   return (
     <div className={styles.grid}>
-      <Card label="Observations" value={stats.total} sub="grade recherche" />
+      <Card
+        label="Observations"
+        value={stats.total}
+        sub={stats.sampleSize < stats.total ? `${stats.sampleSize} chargées` : 'vérifiables'}
+      />
       <Card label="Localités" value={stats.uniquePlaces} sub="sites distincts" />
       <Card label="Années" value={stats.totalYears} sub={stats.sortedYears[0] ? `${stats.sortedYears[0]} – ${stats.sortedYears[stats.sortedYears.length - 1]}` : '—'} />
       <Card label="Pic phénologique" value={stats.peakMonthLabel} sub={`mois le + actif`} />

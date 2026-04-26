@@ -97,7 +97,7 @@ export default function App() {
 
             {activeTab === 'obs' && (
               <div className={styles.tabContent}>
-                <ObservationsList observations={observations} />
+                <ObservationsList observations={observations} total={stats?.total} />
               </div>
             )}
           </>
@@ -106,7 +106,7 @@ export default function App() {
         {!hasData && !loading && !error && (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>◎</div>
-            <p>Recherchez une espèce pour commencer l&apos;analyse</p>
+            <p>Recherchez une espèce, une famille ou un taxon pour commencer l&apos;analyse</p>
             <div className={styles.examples}>
               {['Lynx lynx','Ciconia ciconia','Quercus ilex','Canis lupus'].map(s => (
                 <button key={s} className={styles.exampleBtn} onClick={() => search({ speciesName: s })}>

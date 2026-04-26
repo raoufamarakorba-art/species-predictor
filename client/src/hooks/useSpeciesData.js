@@ -37,9 +37,8 @@ export function useSpeciesData() {
         return
       }
 
-      // Best-matching taxon (first observation)
-      const taxon = observations[0]?.taxon || null
-      const stats = computeStats(observations)
+      const taxon = data.resolved?.taxon || observations[0]?.taxon || null
+      const stats = computeStats(observations, data.total_results)
       let datasetSummary = null
 
       try {
@@ -60,7 +59,7 @@ export function useSpeciesData() {
       // 2 – Fetch AI predictions (async, non-blocking)
       setState(s => ({ ...s, loadingPredict: true }))
       try {
-        const result = await fetchPrediction({ observations, taxon, speciesName, biotope })
+        const result = await fetchPrediction({ observations, taxon, speciesName: taxon?.name || speciesName, biotope })
         setState(s => ({ ...s, prediction: result.prediction, loadingPredict: false }))
       } catch (predErr) {
         setState(s => ({

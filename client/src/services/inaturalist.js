@@ -1,4 +1,12 @@
 const BASE = '/api/inaturalist'
+const PLACE_CONNECTOR_RE = /^(.+?)\s+(?:d['’]\s*|de\s+l['’]\s*|de\s+la\s+|de\s+|du\s+|des\s+|en\s+|dans\s+|à\s+|a\s+|in\s+)(.+)$/i
+
+export function extractTaxonSearchTerm(value) {
+  const query = value.trim()
+  if (query.includes(',')) return query.split(',', 1)[0].trim()
+  const match = query.match(PLACE_CONNECTOR_RE)
+  return (match?.[1] || query).trim()
+}
 
 /**
  * Fetch species observations from iNaturalist via the local proxy
@@ -21,8 +29,9 @@ export async function fetchObservations({ taxonName, placeName, perPage = 200 })
  * @param {string} q
  */
 export async function autocompleteTaxa(q) {
-  if (q.length < 2) return []
-  const res = await fetch(`${BASE}/taxa/autocomplete?q=${encodeURIComponent(q)}`)
+  const taxonTerm = extractTaxonSearchTerm(q)
+  if (taxonTerm.length < 2) return []
+  const res = await fetch(`${BASE}/taxa/autocomplete?q=${encodeURIComponent(taxonTerm)}`)
   if (!res.ok) return []
   const data = await res.json()
   return data.results || []
@@ -32,7 +41,7 @@ export async function autocompleteTaxa(q) {
  * Compute statistics from a raw observations array
  * @param {Array} observations
  */
-export function computeStats(observations) {
+export function computeStats(observations, totalResults = observations.length) {
   const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
 
   const monthCounts = new Array(12).fill(0)
@@ -63,6 +72,7 @@ export function computeStats(observations) {
   const peakMonth = monthCounts.indexOf(Math.max(...monthCounts))
   const totalYears = sortedYears.length
   const avgPerYear = totalYears > 1 ? (observations.length / totalYears).toFixed(1) : '-'
+  const total = Number.isFinite(totalResults) ? totalResults : observations.length
 
   // Detect trend: compare first half vs second half of years
   let trend = 'stable'
@@ -76,7 +86,8 @@ export function computeStats(observations) {
   }
 
   return {
-    total: observations.length,
+    total,
+    sampleSize: observations.length,
     monthCounts,
     monthLabels: MONTHS,
     yearMap,

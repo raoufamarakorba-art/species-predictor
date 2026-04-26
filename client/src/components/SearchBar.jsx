@@ -64,7 +64,7 @@ export default function SearchBar({ onSearch, loading }) {
           <input
             className={styles.input}
             type="text"
-            placeholder="Espèce (ex: Canis lupus, Quercus robur…)"
+            placeholder="Taxon (ex: Syrphidae d'Algérie, Canis lupus…)"
             value={species}
             onChange={e => handleSpeciesChange(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSubmit()}

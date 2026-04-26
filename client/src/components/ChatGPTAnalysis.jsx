@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import {
   buildChatGPTMetadata,
   buildChatGPTPrompt,
@@ -10,6 +12,8 @@ import {
   observationsToGeoJson,
 } from '../services/datasets.js'
 import styles from './ChatGPTAnalysis.module.css'
+
+const markdownPlugins = [remarkGfm]
 
 export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSummary, speciesName }) {
   const [analysis, setAnalysis] = useState(null)
@@ -65,7 +69,7 @@ export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSum
     try {
       setAnalysis({ type: 'json', name: file.name, value: JSON.parse(text) })
     } catch {
-      setAnalysis({ type: 'text', name: file.name, value: text })
+      setAnalysis({ type: 'markdown', name: file.name, value: text })
     }
     event.target.value = ''
   }
@@ -120,10 +124,20 @@ export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSum
           {analysis.type === 'json' ? (
             <StructuredAnalysis value={analysis.value} />
           ) : (
-            <pre className={styles.markdown}>{analysis.value}</pre>
+            <MarkdownAnalysis value={analysis.value} />
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function MarkdownAnalysis({ value }) {
+  return (
+    <div className={styles.markdown}>
+      <ReactMarkdown remarkPlugins={markdownPlugins}>
+        {value}
+      </ReactMarkdown>
     </div>
   )
 }

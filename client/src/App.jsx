@@ -27,7 +27,7 @@ const MODES = [
 export default function App() {
   const [mode, setMode] = useState('search')
   const [activeTab, setActiveTab] = useState('data')
-  const { observations, taxon, stats, datasetSummary, loading, error, search } = useSpeciesData()
+  const { observations, taxon, place, stats, datasetSummary, loading, error, search } = useSpeciesData()
 
   const hasData = observations.length > 0
   const lastSearch = taxon?.name || ''
@@ -78,7 +78,7 @@ export default function App() {
 
             {hasData && (
               <>
-                <SpeciesInfo taxon={taxon} speciesName={lastSearch} />
+                <SpeciesInfo taxon={taxon} place={place} speciesName={lastSearch} />
 
                 <div className={styles.tabs}>
                   {TABS.map(t => (
@@ -109,6 +109,7 @@ export default function App() {
                     <ChatGPTAnalysis
                       observations={observations}
                       taxon={taxon}
+                      place={place}
                       stats={stats}
                       datasetSummary={datasetSummary}
                       speciesName={lastSearch}

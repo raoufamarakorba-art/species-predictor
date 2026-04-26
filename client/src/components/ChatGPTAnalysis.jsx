@@ -12,14 +12,14 @@ import {
 import { AnalysisReport, acceptedAnalysisFiles, analysisFromFile } from './AnalysisReport.jsx'
 import styles from './ChatGPTAnalysis.module.css'
 
-export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSummary, speciesName }) {
+export default function ChatGPTAnalysis({ observations, taxon, place, stats, datasetSummary, speciesName }) {
   const [analysis, setAnalysis] = useState(null)
   const [analysisError, setAnalysisError] = useState('')
   const fileInputRef = useRef(null)
 
   const metadata = useMemo(
-    () => buildChatGPTMetadata({ observations, taxon, stats, datasetSummary, speciesName }),
-    [observations, taxon, stats, datasetSummary, speciesName]
+    () => buildChatGPTMetadata({ observations, taxon, place, stats, datasetSummary, speciesName }),
+    [observations, taxon, place, stats, datasetSummary, speciesName]
   )
   const prompt = useMemo(() => buildChatGPTPrompt({ metadata }), [metadata])
   const geojson = useMemo(() => observationsToGeoJson(observations), [observations])
@@ -109,6 +109,7 @@ export default function ChatGPTAnalysis({ observations, taxon, stats, datasetSum
           <Metric label="Total iNaturalist" value={metadata.dataset.totalObservations} />
           <Metric label="Export CSV" value={metadata.dataset.loadedObservations} />
           <Metric label="Géoréférencées" value={metadata.dataset.georeferencedObservations} />
+          <Metric label="Localité" value={metadata.query.placeName || 'globale'} />
           <Metric label="Rang taxon" value={metadata.query.rank || 'inconnu'} />
         </div>
       </div>

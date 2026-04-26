@@ -2,7 +2,7 @@ function compactObject(value) {
   return JSON.parse(JSON.stringify(value ?? null))
 }
 
-export function buildChatGPTMetadata({ observations, taxon, stats, datasetSummary, speciesName }) {
+export function buildChatGPTMetadata({ observations, taxon, place, stats, datasetSummary, speciesName }) {
   const coordinateCount = observations.filter(observation => observation.geojson?.coordinates?.length >= 2).length
 
   return {
@@ -14,6 +14,9 @@ export function buildChatGPTMetadata({ observations, taxon, stats, datasetSummar
       preferredCommonName: taxon?.preferred_common_name || null,
       taxonId: taxon?.id || null,
       rank: taxon?.rank || null,
+      placeName: place?.display_name || null,
+      placeId: place?.id || null,
+      placeType: place?.place_type || null,
     },
     dataset: {
       loadedObservations: observations.length,
@@ -42,6 +45,7 @@ export function buildChatGPTMetadata({ observations, taxon, stats, datasetSummar
 
 export function buildChatGPTPrompt({ metadata }) {
   const taxonName = metadata.query.taxonName || 'le taxon exporté'
+  const placeName = metadata.query.placeName || 'monde entier / aucune localité filtrée'
   const total = metadata.dataset.totalObservations
   const loaded = metadata.dataset.loadedObservations
 
@@ -59,6 +63,7 @@ Tu vas analyser un export issu de l'application Species Predictor.
 
 - Taxon: ${taxonName}
 - Rang: ${metadata.query.rank || 'inconnu'}
+- Localité: ${placeName}
 - Observations iNaturalist totales: ${total}
 - Observations chargées dans le CSV: ${loaded}
 - Observations géoréférencées: ${metadata.dataset.georeferencedObservations}

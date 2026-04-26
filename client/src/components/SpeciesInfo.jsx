@@ -1,6 +1,6 @@
 import styles from './SpeciesInfo.module.css'
 
-export default function SpeciesInfo({ taxon, speciesName }) {
+export default function SpeciesInfo({ taxon, place, speciesName }) {
   if (!taxon && !speciesName) return null
 
   const name = taxon?.preferred_common_name || speciesName
@@ -23,6 +23,16 @@ export default function SpeciesInfo({ taxon, speciesName }) {
         <div className={styles.tags}>
           {rank && <span className={styles.tag}>{rank}</span>}
           {iconic && <span className={styles.tag}>{iconic}</span>}
+          {place?.display_name && (
+            <a
+              href={`https://www.inaturalist.org/places/${place.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className={styles.placeLink}
+            >
+              {place.display_name}
+            </a>
+          )}
           {id && (
             <a
               href={`https://www.inaturalist.org/taxa/${id}`}

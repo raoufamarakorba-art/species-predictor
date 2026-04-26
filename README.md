@@ -148,6 +148,18 @@ Voir aussi : [docs/CHATGPT_WORKFLOW.md](docs/CHATGPT_WORKFLOW.md)
 
 ---
 
+## Recherche par localité
+
+Le champ `Localité` accepte un pays, une wilaya ou une ville iNaturalist. Pour l'Algérie, les formes pratiques suivantes sont normalisées :
+
+- `Algérie - BBA` ou `BBA` → `Bordj Bou Arreridj`
+- `Annaba` → wilaya/ville Annaba selon le lieu iNaturalist trouvé
+- `Syrphidae d'Algérie` reste accepté dans le champ taxon
+
+Quand un lieu est résolu, la requête utilise son `place_id` iNaturalist, ce qui évite de filtrer approximativement par texte.
+
+---
+
 ## Scripts disponibles
 
 | Commande | Description |

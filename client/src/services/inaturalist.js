@@ -1,5 +1,6 @@
 const BASE = '/api/inaturalist'
 const PLACE_CONNECTOR_RE = /^(.+?)\s+(?:d['’]\s*|de\s+l['’]\s*|de\s+la\s+|de\s+|du\s+|des\s+|en\s+|dans\s+|à\s+|a\s+|in\s+)(.+)$/i
+const COUNTRY_PLACE_PARTS = new Set(['algeria', 'algerie', 'dz', 'france', 'fr', 'worldwide'])
 
 export function extractTaxonSearchTerm(value) {
   const query = value.trim()
@@ -37,6 +38,26 @@ export async function autocompleteTaxa(q) {
   return data.results || []
 }
 
+function normalizePlacePart(value) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+export function localPlaceName(placeGuess) {
+  const parts = String(placeGuess || '')
+    .split(',')
+    .map(part => part.trim())
+    .filter(Boolean)
+
+  if (parts.length === 0) return 'Autre'
+
+  const local = parts.find(part => !COUNTRY_PLACE_PARTS.has(normalizePlacePart(part)))
+  return (local || parts[0]).slice(0, 32)
+}
+
 /**
  * Compute statistics from a raw observations array
  * @param {Array} observations
@@ -57,8 +78,7 @@ export function computeStats(observations, totalResults = observations.length) {
       yearMap[y] = (yearMap[y] || 0) + 1
     }
     if (o.place_guess) {
-      const parts = o.place_guess.split(',')
-      const key = parts[parts.length - 1]?.trim().slice(0, 25) || 'Autre'
+      const key = localPlaceName(o.place_guess)
       placeMap[key] = (placeMap[key] || 0) + 1
     }
     if (o.geojson?.coordinates) coordinatesPresent.push(o.geojson.coordinates)

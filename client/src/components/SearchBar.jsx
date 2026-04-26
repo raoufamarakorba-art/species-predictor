@@ -87,7 +87,7 @@ export default function SearchBar({ onSearch, loading }) {
         <input
           className={`${styles.input} ${styles.regionInput}`}
           type="text"
-          placeholder="Région (ex: France, Algeria…)"
+          placeholder="Localité (ex: Algérie - BBA, Annaba…)"
           value={region}
           onChange={e => setRegion(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}

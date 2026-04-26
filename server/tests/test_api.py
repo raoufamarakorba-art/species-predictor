@@ -40,6 +40,13 @@ def test_inaturalist_combined_taxon_place_query_is_split():
     assert place == "Algérie"
 
 
+def test_inaturalist_algeria_locality_alias_is_normalized():
+    place, ancestor_id = inaturalist_router.normalize_place_query("Algérie - BBA")
+
+    assert place == "Bordj Bou Arreridj"
+    assert ancestor_id == 7300
+
+
 def test_inaturalist_observations_resolve_taxon_and_place_ids(monkeypatch):
     calls = []
 
@@ -100,6 +107,49 @@ def test_inaturalist_observations_resolve_taxon_and_place_ids(monkeypatch):
         "default_photo": None,
     }
     assert payload["resolved"]["place"]["id"] == 7300
+    assert [path for path, _params in calls] == ["/taxa/autocomplete", "/search", "/observations"]
+
+
+def test_inaturalist_observations_resolve_algerian_locality_alias(monkeypatch):
+    calls = []
+
+    async def fake_fetch(path, params=None):
+        calls.append((path, dict(params or {})))
+        if path == "/taxa/autocomplete":
+            return {"results": [{"id": 49995, "name": "Syrphidae", "rank": "family"}]}
+        if path == "/search":
+            assert params["q"] == "Bordj Bou Arreridj"
+            return {
+                "results": [
+                    {
+                        "type": "Place",
+                        "matches": ["Bordj Bou Arreridj, BB, DZ"],
+                        "record": {
+                            "id": 15571,
+                            "name": "Bordj Bou Arreridj",
+                            "display_name": "Bordj Bou Arreridj, BB, DZ",
+                            "place_type": 9,
+                            "ancestor_place_ids": [97392, 7300, 12946, 15571],
+                        },
+                    }
+                ]
+            }
+        if path == "/observations":
+            assert params["taxon_id"] == 49995
+            assert params["place_id"] == 15571
+            return {
+                "total_results": 4,
+                "results": [{"id": 1, "taxon": {"id": 49995, "name": "Syrphidae"}}],
+            }
+        raise AssertionError(f"Unexpected path: {path}")
+
+    monkeypatch.setattr(inaturalist_router, "fetch_inaturalist", fake_fetch)
+
+    response = client.get("/api/inaturalist/observations?taxon_name=Syrphidae&place_name=Alg%C3%A9rie%20-%20BBA")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["resolved"]["place"]["display_name"] == "Bordj Bou Arreridj, BB, DZ"
     assert [path for path, _params in calls] == ["/taxa/autocomplete", "/search", "/observations"]
 
 

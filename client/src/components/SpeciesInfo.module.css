@@ -57,13 +57,24 @@
   color: var(--color-text-muted);
 }
 
-.link {
+.link,
+.placeLink {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 6px;
-  background: var(--color-accent-light);
-  color: var(--color-accent);
   text-decoration: none;
   border: none;
 }
+
+.link {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+}
+
+.placeLink {
+  background: var(--color-accent-2-light);
+  color: var(--color-accent-2);
+}
+
 .link:hover { opacity: 0.8; text-decoration: none; }
+.placeLink:hover { opacity: 0.8; text-decoration: none; }

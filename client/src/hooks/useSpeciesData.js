@@ -5,6 +5,7 @@ import { fetchDatasetSummary } from '../services/datasets.js'
 const initialState = {
   observations: [],
   taxon: null,
+  place: null,
   stats: null,
   datasetSummary: null,
   loading: false,
@@ -34,6 +35,7 @@ export function useSpeciesData() {
       }
 
       const taxon = data.resolved?.taxon || observations[0]?.taxon || null
+      const place = data.resolved?.place || null
       const stats = computeStats(observations, data.total_results)
       let datasetSummary = null
 
@@ -47,6 +49,7 @@ export function useSpeciesData() {
         ...s,
         observations,
         taxon,
+        place,
         stats,
         datasetSummary,
         loading: false,

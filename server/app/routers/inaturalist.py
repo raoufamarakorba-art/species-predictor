@@ -20,6 +20,27 @@ PLACE_CONNECTOR_RE = re.compile(
     re.IGNORECASE,
 )
 PLACE_ARTICLE_RE = re.compile(r"^(?:l['’]\s*|la\s+|le\s+|les\s+|the\s+)", re.IGNORECASE)
+PLACE_SCOPE_RE = re.compile(r"\s*(?:-|–|—|/|\\|>)\s*")
+ALGERIA_PLACE_ID = 7300
+ALGERIA_NAMES = {"algerie", "algeria", "dz"}
+ALGERIA_PLACE_ALIASES = {
+    "bba": "Bordj Bou Arreridj",
+    "bb": "Bordj Bou Arreridj",
+    "bordj bou arreridj": "Bordj Bou Arreridj",
+    "bordj bou arréridj": "Bordj Bou Arreridj",
+    "annaba": "Annaba",
+    "alger": "Algiers",
+    "algiers": "Algiers",
+    "oran": "Oran",
+    "constantine": "Constantine",
+    "setif": "Sétif",
+    "sétif": "Sétif",
+    "bejaia": "Béjaïa",
+    "béjaïa": "Béjaïa",
+    "bejaïa": "Béjaïa",
+    "tlemcen": "Tlemcen",
+    "skikda": "Skikda",
+}
 
 
 def make_cache_key(path: str, params: dict[str, Any] | None = None) -> tuple[str, tuple[tuple[str, str], ...]]:
@@ -60,6 +81,42 @@ def normalize_search_value(value: str) -> str:
 
 def clean_place_name(value: str) -> str:
     return PLACE_ARTICLE_RE.sub("", value.strip(" \t\n\r,;")).strip()
+
+
+def is_algeria_name(value: str) -> bool:
+    return normalize_search_value(value) in ALGERIA_NAMES
+
+
+def normalize_place_query(place_name: str) -> tuple[str, int | None]:
+    place = clean_place_name(place_name)
+    preferred_ancestor_id: int | None = None
+
+    scoped_parts = [clean_place_name(part) for part in PLACE_SCOPE_RE.split(place) if clean_place_name(part)]
+    if len(scoped_parts) >= 2:
+        if is_algeria_name(scoped_parts[0]):
+            place = " ".join(scoped_parts[1:])
+            preferred_ancestor_id = ALGERIA_PLACE_ID
+        elif is_algeria_name(scoped_parts[-1]):
+            place = " ".join(scoped_parts[:-1])
+            preferred_ancestor_id = ALGERIA_PLACE_ID
+
+    comma_parts = [clean_place_name(part) for part in place.split(",") if clean_place_name(part)]
+    if len(comma_parts) >= 2:
+        if is_algeria_name(comma_parts[0]):
+            place = " ".join(comma_parts[1:])
+            preferred_ancestor_id = ALGERIA_PLACE_ID
+        elif is_algeria_name(comma_parts[-1]):
+            place = " ".join(comma_parts[:-1])
+            preferred_ancestor_id = ALGERIA_PLACE_ID
+
+    normalized = normalize_search_value(place)
+    if normalized in ALGERIA_PLACE_ALIASES:
+        place = ALGERIA_PLACE_ALIASES[normalized]
+
+    if is_algeria_name(place):
+        return "Algeria", ALGERIA_PLACE_ID
+
+    return place, preferred_ancestor_id
 
 
 def split_taxon_place_query(taxon_name: str, place_name: str | None = None) -> tuple[str, str | None]:
@@ -120,13 +177,26 @@ async def resolve_taxon(taxon_name: str) -> dict[str, Any] | None:
     return minimal_taxon(result) if result else None
 
 
-def pick_place_result(results: list[dict[str, Any]], place_name: str) -> dict[str, Any] | None:
+def place_matches_ancestor(place: dict[str, Any], ancestor_place_id: int | None) -> bool:
+    if ancestor_place_id is None:
+        return True
+    ancestor_ids = place.get("ancestor_place_ids") or []
+    return place.get("id") == ancestor_place_id or ancestor_place_id in ancestor_ids
+
+
+def pick_place_result(
+    results: list[dict[str, Any]],
+    place_name: str,
+    ancestor_place_id: int | None = None,
+) -> dict[str, Any] | None:
     target = normalize_search_value(place_name)
     for result in results:
         if result.get("type") != "Place":
             continue
 
         record = result.get("record") or {}
+        if not place_matches_ancestor(record, ancestor_place_id):
+            continue
         candidates = [
             record.get("name"),
             record.get("display_name"),
@@ -138,8 +208,13 @@ def pick_place_result(results: list[dict[str, Any]], place_name: str) -> dict[st
             return record
 
     for result in results:
-        if result.get("type") == "Place" and result.get("record", {}).get("id"):
-            return result["record"]
+        record = result.get("record", {})
+        if (
+            result.get("type") == "Place"
+            and record.get("id")
+            and place_matches_ancestor(record, ancestor_place_id)
+        ):
+            return record
 
     return None
 
@@ -157,11 +232,12 @@ async def resolve_place(place_name: str) -> dict[str, Any] | None:
     if not place_name:
         return None
 
+    normalized_place_name, ancestor_place_id = normalize_place_query(place_name)
     payload = await fetch_inaturalist(
         "/search",
-        {"q": place_name, "sources": "places", "per_page": "5"},
+        {"q": normalized_place_name, "sources": "places", "per_page": "5"},
     )
-    result = pick_place_result(payload.get("results", []), place_name)
+    result = pick_place_result(payload.get("results", []), normalized_place_name, ancestor_place_id)
     return minimal_place(result) if result else None
 
 

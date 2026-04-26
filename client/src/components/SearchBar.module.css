@@ -24,7 +24,7 @@
 .input:focus, .select:focus { border-color: var(--color-accent); }
 .input::placeholder { color: var(--color-text-faint); }
 
-.regionInput { max-width: 180px; }
+.regionInput { max-width: 240px; }
 
 .select { max-width: 160px; padding-right: 8px; }
 

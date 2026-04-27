@@ -80,8 +80,6 @@ def init_db(connection: sqlite3.Connection) -> None:
             ON occurrences(scientific_name);
         CREATE INDEX IF NOT EXISTS idx_occurrences_locality
             ON occurrences(locality);
-        CREATE INDEX IF NOT EXISTS idx_occurrences_biotope
-            ON occurrences(biotope);
         CREATE INDEX IF NOT EXISTS idx_occurrences_date
             ON occurrences(year, month);
 
@@ -106,6 +104,7 @@ def init_db(connection: sqlite3.Connection) -> None:
         """
     )
     ensure_column(connection, "occurrences", "biotope", "TEXT")
+    connection.execute("CREATE INDEX IF NOT EXISTS idx_occurrences_biotope ON occurrences(biotope)")
 
 
 def ensure_column(connection: sqlite3.Connection, table: str, column: str, definition: str) -> None:

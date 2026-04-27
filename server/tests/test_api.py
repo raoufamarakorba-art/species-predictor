@@ -1,5 +1,9 @@
+import sqlite3
+from contextlib import closing
+
 from fastapi.testclient import TestClient
 
+from app.config import settings
 from app.main import app
 from app.routers import inaturalist as inaturalist_router
 
@@ -221,6 +225,64 @@ def test_dataset_import_persists_records_and_updates_duplicates():
     assert library.status_code == 200
     assert library.json()["totalOccurrences"] == 1
     assert library.json()["georeferencedOccurrences"] == 1
+
+
+def test_dataset_import_migrates_existing_database_without_biotope_column():
+    settings.database_path.parent.mkdir(parents=True, exist_ok=True)
+    with closing(sqlite3.connect(settings.database_path)) as connection:
+        connection.execute(
+            """
+            CREATE TABLE occurrences (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                dedupe_key TEXT UNIQUE,
+                taxon_id TEXT,
+                scientific_name TEXT,
+                common_name TEXT,
+                taxon_rank TEXT,
+                observed_on TEXT,
+                year INTEGER,
+                month INTEGER,
+                latitude REAL,
+                longitude REAL,
+                place_guess TEXT,
+                locality TEXT,
+                country_code TEXT,
+                observer TEXT,
+                quality_grade TEXT,
+                basis_of_record TEXT,
+                url TEXT,
+                first_source_id INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+
+    response = client.post(
+        "/api/datasets/import",
+        json={
+            "source": {"name": "Legacy import", "type": "field"},
+            "observations": [
+                {
+                    "scientificName": "Syrphidae",
+                    "eventDate": "2025-05-10",
+                    "decimalLatitude": 36.1,
+                    "decimalLongitude": 4.7,
+                    "locality": "Bordj Bou Arreridj",
+                    "habitat": "forest",
+                }
+            ],
+        },
+    )
+
+    with closing(sqlite3.connect(settings.database_path)) as connection:
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(occurrences)").fetchall()}
+        biotope = connection.execute("SELECT biotope FROM occurrences").fetchone()[0]
+
+    assert response.status_code == 200
+    assert response.json()["created"] == 1
+    assert "biotope" in columns
+    assert biotope == "forest"
 
 
 def test_dataset_import_deduplicates_across_sources_and_keeps_provenance():

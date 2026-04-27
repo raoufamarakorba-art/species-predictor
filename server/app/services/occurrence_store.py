@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from app.config import settings
+from app.services.biotopes import infer_biotope
 
 
 SUPPORTED_SOURCE_TYPES = {"inaturalist", "gbif", "field", "literature", "article", "other"}
@@ -63,6 +64,7 @@ def init_db(connection: sqlite3.Connection) -> None:
             longitude REAL,
             place_guess TEXT,
             locality TEXT,
+            biotope TEXT,
             country_code TEXT,
             observer TEXT,
             quality_grade TEXT,
@@ -78,6 +80,8 @@ def init_db(connection: sqlite3.Connection) -> None:
             ON occurrences(scientific_name);
         CREATE INDEX IF NOT EXISTS idx_occurrences_locality
             ON occurrences(locality);
+        CREATE INDEX IF NOT EXISTS idx_occurrences_biotope
+            ON occurrences(biotope);
         CREATE INDEX IF NOT EXISTS idx_occurrences_date
             ON occurrences(year, month);
 
@@ -101,6 +105,13 @@ def init_db(connection: sqlite3.Connection) -> None:
             ON occurrence_sources(source_id);
         """
     )
+    ensure_column(connection, "occurrences", "biotope", "TEXT")
+
+
+def ensure_column(connection: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    columns = {row["name"] for row in connection.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in columns:
+        connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
 def row_to_dict(row: sqlite3.Row | None) -> dict[str, Any] | None:
@@ -351,6 +362,8 @@ def normalize_record(record: dict[str, Any], source_id: int) -> dict[str, Any]:
     source_key_value = record_id or url or raw_hash(record)
     source_key = f"{source_id}:{source_key_value}"
 
+    locality = first_value(record, ("locality", "place_guess", "verbatimLocality", "place"))
+
     return {
         "source_record_id": record_id,
         "source_record_key": source_key,
@@ -365,7 +378,13 @@ def normalize_record(record: dict[str, Any], source_id: int) -> dict[str, Any]:
         "latitude": lat,
         "longitude": lon,
         "place_guess": first_value(record, ("place_guess", "verbatimLocality", "place")),
-        "locality": first_value(record, ("locality", "place_guess", "verbatimLocality", "place")),
+        "locality": locality,
+        "biotope": infer_biotope(
+            lat,
+            lon,
+            locality=locality,
+            explicit=first_value(record, ("biotope", "habitat", "habitatType", "habitat_type", "dwc:habitat")),
+        ),
         "country_code": first_value(record, ("countryCode", "country_code")),
         "observer": observer_name(record),
         "quality_grade": first_value(record, ("quality_grade", "qualityGrade")),
@@ -408,10 +427,10 @@ def insert_occurrence(connection: sqlite3.Connection, source_id: int, normalized
         INSERT INTO occurrences (
             dedupe_key, taxon_id, scientific_name, common_name, taxon_rank,
             observed_on, year, month, latitude, longitude, place_guess, locality,
-            country_code, observer, quality_grade, basis_of_record, url,
+            biotope, country_code, observer, quality_grade, basis_of_record, url,
             first_source_id, created_at, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             normalized["dedupe_key"],
@@ -426,6 +445,7 @@ def insert_occurrence(connection: sqlite3.Connection, source_id: int, normalized
             normalized["longitude"],
             clean_payload(normalized["place_guess"]),
             clean_payload(normalized["locality"]),
+            clean_payload(normalized["biotope"]),
             clean_payload(normalized["country_code"]),
             clean_payload(normalized["observer"]),
             clean_payload(normalized["quality_grade"]),
@@ -455,6 +475,7 @@ def update_occurrence(connection: sqlite3.Connection, occurrence_id: int, normal
             longitude = COALESCE(?, longitude),
             place_guess = COALESCE(?, place_guess),
             locality = COALESCE(?, locality),
+            biotope = COALESCE(?, biotope),
             country_code = COALESCE(?, country_code),
             observer = COALESCE(?, observer),
             quality_grade = COALESCE(?, quality_grade),
@@ -475,6 +496,7 @@ def update_occurrence(connection: sqlite3.Connection, occurrence_id: int, normal
             normalized["longitude"],
             clean_payload(normalized["place_guess"]),
             clean_payload(normalized["locality"]),
+            clean_payload(normalized["biotope"]),
             clean_payload(normalized["country_code"]),
             clean_payload(normalized["observer"]),
             clean_payload(normalized["quality_grade"]),

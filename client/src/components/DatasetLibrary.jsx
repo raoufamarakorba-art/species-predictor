@@ -350,6 +350,7 @@ export default function DatasetLibrary() {
                   <th>Taxon</th>
                   <th>Date</th>
                   <th>Localité</th>
+                  <th>Biotope</th>
                   <th>Source</th>
                   <th>Coordonnées</th>
                 </tr>
@@ -360,6 +361,7 @@ export default function DatasetLibrary() {
                     <td>{item.scientific_name || item.taxon_id || 'Taxon inconnu'}</td>
                     <td>{item.observed_on || '—'}</td>
                     <td>{item.locality || item.place_guess || '—'}</td>
+                    <td>{item.biotope || '—'}</td>
                     <td>{item.sources.map(sourceItem => sourceItem.name).join(', ')}</td>
                     <td>
                       {item.latitude !== null && item.longitude !== null

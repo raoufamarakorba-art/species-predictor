@@ -33,10 +33,12 @@
 
 ## v0.5.0 - SDM
 
-- Add a first Python-native SDM pipeline with `elapid`.
-- Generate pseudo-absences from cleaned occurrence data.
+- Add a first Python-native presence-background SDM pipeline.
+- Generate pseudo-absences/background points from cleaned occurrence data.
+- Report suitability by North/South zone and inferred/imported biotope.
 - Add environmental raster ingestion.
 - Report evaluation metrics and model uncertainty.
+- Evaluate `elapid`/MaxEnt once environmental rasters are available.
 
 ## Later
 

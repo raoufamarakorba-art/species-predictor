@@ -9,6 +9,7 @@ import ChatGPTAnalysis from './components/ChatGPTAnalysis.jsx'
 import ReportImportMode from './components/ReportImportMode.jsx'
 import ObservationsList from './components/ObservationsList.jsx'
 import DatasetLibrary from './components/DatasetLibrary.jsx'
+import SpeciesDistributionModel from './components/SpeciesDistributionModel.jsx'
 import { useSpeciesData } from './hooks/useSpeciesData.js'
 import styles from './App.module.css'
 
@@ -16,6 +17,7 @@ const OccurrenceMap = lazy(() => import('./components/OccurrenceMap.jsx'))
 
 const TABS = [
   { id: 'data',    label: 'Données & carte' },
+  { id: 'sdm',     label: 'Modèle SDM' },
   { id: 'chatgpt', label: 'Analyse ChatGPT' },
   { id: 'obs',     label: 'Observations' },
 ]
@@ -23,6 +25,7 @@ const TABS = [
 const MODES = [
   { id: 'search', label: 'Recherche iNaturalist' },
   { id: 'library', label: 'Base locale' },
+  { id: 'sdm', label: 'Modèle SDM' },
   { id: 'report', label: 'Rapport Markdown' },
 ]
 
@@ -65,6 +68,8 @@ export default function App() {
           <ReportImportMode />
         ) : mode === 'library' ? (
           <DatasetLibrary />
+        ) : mode === 'sdm' ? (
+          <SpeciesDistributionModel useLocalDatabase />
         ) : (
           <>
             <SearchBar onSearch={search} loading={loading} />
@@ -116,6 +121,17 @@ export default function App() {
                       place={place}
                       stats={stats}
                       datasetSummary={datasetSummary}
+                      speciesName={lastSearch}
+                    />
+                  </div>
+                )}
+
+                {activeTab === 'sdm' && (
+                  <div className={styles.tabContent}>
+                    <SpeciesDistributionModel
+                      key={lastSearch}
+                      observations={observations}
+                      taxon={taxon}
                       speciesName={lastSearch}
                     />
                   </div>

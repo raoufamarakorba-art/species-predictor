@@ -268,6 +268,77 @@ def test_dataset_import_deduplicates_across_sources_and_keeps_provenance():
     assert len(occurrences[0]["sources"]) == 2
 
 
+def test_sdm_predict_trains_presence_background_model_from_current_observations():
+    observations = [
+        {
+            "id": index,
+            "observed_on": f"2025-05-{10 + index:02d}",
+            "geojson": {"coordinates": [4.35 + index * 0.035, 35.95 + index * 0.025]},
+            "taxon": {"id": 49995, "name": "Syrphidae", "rank": "family"},
+            "place_guess": "Bordj Bou Arreridj, DZ",
+            "habitat": "agriculture" if index % 2 else "steppe",
+        }
+        for index in range(10)
+    ]
+
+    response = client.post(
+        "/api/sdm/predict",
+        json={"taxonName": "Syrphidae", "observations": observations, "gridSize": 8},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["algorithm"] == "presence-background-logistic"
+    assert payload["dataSource"] == "current_observations"
+    assert payload["taxon"]["presenceCount"] == 10
+    assert payload["backgroundCount"] >= 80
+    assert payload["evaluation"]["auc"] is not None
+    assert {row["label"] for row in payload["northSouth"]} == {"Nord", "Sud"}
+    assert payload["biotopeSuitability"]
+    assert payload["topCells"][0]["suitability"] >= payload["topCells"][-1]["suitability"]
+
+
+def test_sdm_predict_uses_local_database_and_lists_taxa():
+    observations = [
+        {
+            "id": 3000 + index,
+            "observed_on": f"2025-06-{index + 1:02d}",
+            "geojson": {"coordinates": [7.2 + index * 0.04, 36.0 + index * 0.02]},
+            "taxon": {"id": 49995, "name": "Syrphidae", "rank": "family"},
+            "place_guess": "Annaba, DZ",
+            "biotope": "forest" if index % 2 else "freshwater",
+        }
+        for index in range(6)
+    ]
+    import_response = client.post(
+        "/api/datasets/import",
+        json={"source": {"name": "Terrain Annaba", "type": "field"}, "observations": observations},
+    )
+    taxa_response = client.get("/api/sdm/taxa")
+    model_response = client.post("/api/sdm/predict", json={"taxonName": "Syrphidae", "gridSize": 6})
+
+    assert import_response.status_code == 200
+    assert taxa_response.status_code == 200
+    assert taxa_response.json()["results"][0]["name"] == "Syrphidae"
+    assert model_response.status_code == 200
+    assert model_response.json()["dataSource"] == "local_database"
+
+
+def test_sdm_predict_rejects_too_few_georeferenced_presences():
+    response = client.post(
+        "/api/sdm/predict",
+        json={
+            "taxonName": "Syrphidae",
+            "observations": [
+                {"taxon": {"name": "Syrphidae"}, "geojson": {"coordinates": [4.5, 36.1]}},
+            ],
+        },
+    )
+
+    assert response.status_code == 400
+    assert "présences géoréférencées" in response.json()["detail"]
+
+
 def test_inaturalist_cache_status_endpoint():
     response = client.get("/api/inaturalist/cache/status")
 

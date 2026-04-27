@@ -20,6 +20,7 @@ Exploration de données de présence d'espèces depuis **iNaturalist**, analyses
 | **Qualité dataset** | Couverture coordonnées, doublons probables, recommandations |
 | **Base locale SQLite** | Stockage permanent, mise à jour et déduplication des occurrences |
 | **Import multi-source** | Ajout de données iNaturalist, GBIF, terrain ou littérature en CSV/JSON |
+| **Modèle SDM** | Modèle présence-background par taxon, zones Nord/Sud et biotopes |
 | **Workflow ChatGPT** | Export prompt + métadonnées pour analyse externe dans ChatGPT Pro |
 | **Import analyse** | Réintégration d'une synthèse Markdown ou JSON générée dans ChatGPT |
 | **Préparation SDM** | Données et métadonnées prêtes pour analyses reproductibles |
@@ -120,6 +121,7 @@ species-predictor/
 │                    Serveur FastAPI (Python)               │
 │  /api/inaturalist  ──proxy──►  api.inaturalist.org        │
 │  /api/datasets     ─────────►  contrôles qualité + SQLite │
+│  /api/sdm          ─────────►  modèle présence-background │
 └──────────────────────────────────────────────────────────┘
                     │ fichiers exportés / base locale
 ┌───────────────────▼──────────────────────────────────────┐
@@ -184,6 +186,7 @@ Formats d'import acceptés dans l'interface :
 - GeoJSON `FeatureCollection`
 - CSV/TSV avec colonnes iNaturalist (`scientific_name`, `observed_on`, `latitude`, `longitude`, `place_guess`)
 - CSV/TSV Darwin Core (`scientificName`, `eventDate`, `decimalLatitude`, `decimalLongitude`, `locality`, `occurrenceID`, `basisOfRecord`)
+- Champs habitat optionnels : `biotope`, `habitat`, `habitatType`, `habitat_type`, `dwc:habitat`
 
 Endpoints utiles :
 
@@ -193,6 +196,27 @@ Endpoints utiles :
 | `GET /api/datasets/library` | Résumé de la base locale |
 | `GET /api/datasets/occurrences` | Dernières occurrences stockées |
 | `POST /api/datasets/summary` | Résumé qualité d'un jeu temporaire |
+
+---
+
+## Modèle SDM
+
+Le mode `Modèle SDM` entraîne un premier modèle de distribution d'espèces à partir des présences géoréférencées :
+
+- Algorithme : régression logistique présence-background
+- Données : observations courantes ou base locale SQLite
+- Background : pseudo-absences générées dans l'emprise des présences
+- Sorties : score par cellule, synthèse Nord/Sud, synthèse par biotope, variables dominantes, AUC
+- Biotopes : champ importé si disponible, sinon proxy dérivé de la localité et des coordonnées
+
+Ce modèle est une base scientifique reproductible pour explorer les hypothèses. Il n'est pas encore une carte publiable : les prochaines étapes restent l'ajout de rasters environnementaux réels, la correction de biais d'échantillonnage et la validation croisée spatiale.
+
+Endpoints :
+
+| Endpoint | Description |
+|---|---|
+| `POST /api/sdm/predict` | Entraîne un modèle SDM pour un taxon |
+| `GET /api/sdm/taxa` | Liste les taxons géoréférencés disponibles en base locale |
 
 ---
 
@@ -226,7 +250,7 @@ async def occurrences():
 ```
 
 ### Ajouter un modèle de prédiction
-Le dossier `server/app/models/` peut accueillir des modèles ML plus sophistiqués (MaxEnt, BRT, Random Forest via Python/R).
+Le routeur `server/app/routers/sdm.py` et le service `server/app/services/sdm.py` contiennent le modèle présence-background initial. Les prochaines extensions naturelles sont MaxEnt/elapid, Random Forest, variables WorldClim/SRTM et validation croisée spatiale.
 
 ### Carte interactive
 La carte Leaflet est intégrée. Les prochaines améliorations utiles sont le clustering, le filtrage par année et l'export de l'emprise géographique.

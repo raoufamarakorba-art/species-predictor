@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.routers.datasets import router as datasets_router
 from app.routers.inaturalist import router as inaturalist_router
+from app.routers.sdm import router as sdm_router
 
 
 app = FastAPI(title="Species Predictor API", version="0.3.0")
@@ -24,6 +25,7 @@ app.add_middleware(
 
 app.include_router(inaturalist_router)
 app.include_router(datasets_router)
+app.include_router(sdm_router)
 
 
 @app.get("/api/health")
